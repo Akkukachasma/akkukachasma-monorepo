@@ -1,0 +1,22 @@
+model Category {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at       DateTime?    @default(now())
+  updated_at       DateTime?    @updatedAt
+  order            Int?
+  title            String
+  slug             String       @unique @default("category")
+  seo_title        String
+  meta_description String?
+  keywords         String[]
+  description      String
+  image            File?
+  user             User         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id          String       @unique @db.ObjectId
+  articles         Article[]    @relation(fields: [article_ids], references: [id])
+  article_ids      String[]     @db.ObjectId
+  products         Product[]
+  banners          Banner[]     @relation(fields: [banner_ids], references: [id])
+  banner_ids       String[]     @db.ObjectId
+  invoice_taxes    InvoiceTax[] @relation(fields: [invoice_tax_ids], references: [id])
+  invoice_tax_ids  String[]     @db.ObjectId
+}

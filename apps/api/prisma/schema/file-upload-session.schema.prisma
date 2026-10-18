@@ -1,0 +1,25 @@
+// Resumable large-file multipart upload sessions (see FileStreamUploadController).
+
+model FileUploadSession {
+  id                     String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at             DateTime? @default(now())
+  updated_at             DateTime? @updatedAt
+  filename               String
+  mimetype               String
+  total_size             Int
+  total_chunks           Int
+  uploaded_chunk_indices Int[]     @default([])
+  bytes_received         Int       @default(0)
+  status                 String    @default("initiated")
+  relative_storage_key   String
+  expires_at             DateTime
+  completed_at           DateTime?
+  failed_reason          String?
+  result_file_id         String?   @db.ObjectId
+  user_id                String    @db.ObjectId
+  user                   User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([expires_at])
+  @@index([user_id])
+  @@index([status])
+}

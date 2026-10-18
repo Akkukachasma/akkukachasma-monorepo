@@ -1,0 +1,31 @@
+enum DiscountType {
+  FIXED
+  PERCENT
+}
+
+model Coupon {
+  id             String             @id @default(auto()) @map("_id") @db.ObjectId
+  created_at     DateTime?          @default(now())
+  updated_at     DateTime?          @updatedAt
+  name           String             @unique
+  minimum_order  Float
+  per_user_limit Int?               @default(1) // how many time a user can redeem this coupon
+  valid_from     DateTime?          @default(now())
+  valid_till     DateTime? // if there is no date, means coupon is valid forever.
+  quantity       Int?               @default(0) // first <quantity> users can avail this coupon
+  discount_type  DiscountType?      @default(FIXED)
+  discount_value Float
+  user           User               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id        String             @db.ObjectId
+  carts          Cart[]
+  redemptions    CouponRedemption[]
+}
+
+model CouponRedemption {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  coupon      Coupon?  @relation(fields: [coupon_id], references: [id], onDelete: SetNull)
+  coupon_id   String?  @db.ObjectId // Made optional because we won't delete the redemption
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     String   @db.ObjectId
+  redeemed_at DateTime @default(now())
+}

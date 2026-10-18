@@ -1,0 +1,19 @@
+model Shape {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at       DateTime? @default(now())
+  updated_at       DateTime? @updatedAt
+  slug             String    @unique @default("shape")
+  title            String
+  seo_title        String?
+  meta_description String?
+  keywords         String[]
+  description      String
+  image            File?
+  products         Product[]
+  articles         Article[] @relation(fields: [article_ids], references: [id])
+  article_ids      String[]  @db.ObjectId
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id          String    @unique @db.ObjectId
+  banners          Banner[]  @relation(fields: [banner_ids], references: [id])
+  banner_ids       String[]  @db.ObjectId
+}

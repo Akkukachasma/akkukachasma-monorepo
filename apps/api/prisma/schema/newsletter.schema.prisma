@@ -1,0 +1,6 @@
+model Newsletter {
+  id                 String     @id @default(auto()) @map("_id") @db.ObjectId
+  number             String     @unique
+  email              String?     @unique
+  created_at         DateTime   @default(now())
+}

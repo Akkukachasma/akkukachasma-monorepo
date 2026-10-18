@@ -1,0 +1,20 @@
+model TryAtHome {
+    id           String            @id @default(auto()) @map("_id") @db.ObjectId
+    created_at   DateTime?         @default(now())
+    updated_at   DateTime?         @updatedAt
+    purpose      TryAtHomePurpose? @relation(fields: [purpose_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+    purpose_id   String?           @db.ObjectId
+    name         String
+    email        String
+    phone_number String
+    address      Address?
+    message      String?
+}
+
+model TryAtHomePurpose {
+    id         String      @id @default(auto()) @map("_id") @db.ObjectId
+    created_at DateTime?   @default(now())
+    updated_at DateTime?   @updatedAt
+    label      String      @unique
+    requests   TryAtHome[]
+}

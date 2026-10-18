@@ -1,0 +1,54 @@
+// =======================================================================
+// RBAC: Permissions, Roles, UserRole. System roles are not editable
+// (only via seed/developer). A user can have multiple roles but at most
+// one system role (enforced in application logic).
+// =======================================================================
+
+model Permission {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  created_at       DateTime?        @default(now())
+  updated_at       DateTime?        @updatedAt
+  code             String           @unique // e.g. "order:read", "order:read_any"
+  name             String?
+  description      String?
+  role_permissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  created_at       DateTime?        @default(now())
+  updated_at       DateTime?        @updatedAt
+  code             String           @unique // e.g. "admin", "customer"
+  name             String?
+  description      String?
+  is_system_role   Boolean          @default(false) // not editable by any user; only via seed/developer
+  is_active        Boolean          @default(true)
+  role_permissions RolePermission[]
+  user_roles       UserRole[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  role_id      String     @db.ObjectId
+  permission_id String    @db.ObjectId
+  role         Role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission   Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id   String   @db.ObjectId
+  role_id   String   @db.ObjectId
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role      Role     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([user_id, role_id])
+  @@map("user_roles")
+}

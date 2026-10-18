@@ -1,0 +1,10 @@
+model FrameMaterial {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @updatedAt
+  title       String
+  description String?
+  products    Product[]
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id     String    @unique @db.ObjectId
+}

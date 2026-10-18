@@ -1,0 +1,57 @@
+enum PriceAdjustmentDirection {
+  increase
+  decrease
+}
+
+enum PriceAdjustmentMode {
+  percentage
+  fixed
+}
+
+enum PriceAdjustmentStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+/** Batch record for admin bulk frame-product price adjustments (audit). */
+model ProductPriceAdjustment {
+  id                String                    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at        DateTime                  @default(now())
+  direction         PriceAdjustmentDirection
+  mode              PriceAdjustmentMode
+  value             Float
+  status            PriceAdjustmentStatus     @default(pending)
+  error_message     String?
+  started_at        DateTime?
+  completed_at      DateTime?
+  products_total    Int                       @default(0)
+  products_updated  Int                       @default(0)
+  products_clamped  Int                       @default(0)
+  products_skipped  Int                       @default(0)
+  notes             String?
+  created_by        User                      @relation(fields: [created_by_id], references: [id], onUpdate: Cascade, onDelete: Restrict)
+  created_by_id     String                    @db.ObjectId
+  items             ProductPriceAdjustmentItem[]
+
+  @@index([created_at])
+  @@index([status])
+}
+
+/** Per-product snapshot within a price adjustment batch. */
+model ProductPriceAdjustmentItem {
+  id                 String                  @id @default(auto()) @map("_id") @db.ObjectId
+  adjustment         ProductPriceAdjustment  @relation(fields: [adjustment_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  adjustment_id      String                  @db.ObjectId
+  product            Product                 @relation(fields: [product_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product_id         String                  @db.ObjectId
+  old_listing_price  Float
+  new_listing_price  Float
+  old_price          Float
+  new_price          Float
+  clamped            Boolean                 @default(false)
+
+  @@index([adjustment_id])
+  @@index([product_id])
+}

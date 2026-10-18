@@ -1,0 +1,29 @@
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Article {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  created_at    DateTime?     @default(now())
+  updated_at    DateTime?     @updatedAt
+  title         String
+  slug          String        @unique
+  description   String // Meta description for SEO
+  content       String // Using String type for long-form content
+  keywords      String[] // Array of keywords for SEO
+  seo_title     String? // Optional SEO title if different from main title
+  views         Int           @default(0)
+  reading_time  Int? // Estimated reading time in minutes
+  status        ArticleStatus @default(DRAFT)
+  thumbnail     File?
+  thumbnail_alt String? // Alt text for thumbnail image (SEO purposes)
+  tags          String[] // based on these tags products will be recommended on article page. ( optional )
+  shapes        Shape[]       @relation(fields: [shape_ids], references: [id])
+  shape_ids     String[]      @db.ObjectId
+  categories    Category[]    @relation(fields: [category_ids], references: [id])
+  category_ids  String[]      @db.ObjectId
+
+  @@index([status, title, slug, tags])
+}

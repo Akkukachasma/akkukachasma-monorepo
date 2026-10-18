@@ -1,0 +1,22 @@
+model LensDetail {
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at         DateTime?    @default(now())
+  updated_at         DateTime?    @updatedAt
+  image              File?
+  lens_id            String       @unique // this is not for a relation. It is an id that owner will provide.
+  title              String
+  price              Float
+  thickness          Float
+  power_range        String?
+  warranty_period    Int?         @default(0)
+  blue_light_blocker Boolean?     @default(false)
+  crack_resistant    Float?       @default(0)
+  hydrophobic        Float?       @default(0)
+  anti_reflection    Boolean?     @default(false)
+  uv_protection      Boolean?     @default(false)
+  cart_items         CartItem[]
+  lens_feature       LensFeature? @relation(fields: [lens_feature_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  lens_feature_id    String?      @db.ObjectId
+  user               User         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id            String       @unique @db.ObjectId
+}

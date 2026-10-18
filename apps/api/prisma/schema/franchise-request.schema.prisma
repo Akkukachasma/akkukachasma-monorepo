@@ -1,0 +1,32 @@
+enum Owner {
+    owner
+    renter
+    other
+}
+enum Nearby {
+    market
+    college
+    shop
+    other
+}
+
+enum FranchiseRequestStatus {
+    pending
+    approved
+}
+
+model FranchiseRequest {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at      DateTime?    @default(now())
+  updated_at      DateTime?    @updatedAt
+  status          FranchiseRequestStatus @default(pending)
+  name String
+  email String @unique
+  phone_number String
+  address  Address?
+  owner Owner
+  other_owner String?
+  nearby Nearby
+  other_near_by String?
+  message String?
+}

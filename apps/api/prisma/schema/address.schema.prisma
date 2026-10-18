@@ -1,0 +1,27 @@
+enum AddressLabel {
+  home
+  work
+  other
+}
+
+model Address {
+  id                   String            @id @default(auto()) @map("_id") @db.ObjectId
+  created_at           DateTime?         @default(now())
+  updated_at           DateTime?         @updatedAt
+  label                AddressLabel      @default(home)
+  notes                String?
+  address              String
+  country              String?           @default("India")
+  state                String
+  city                 String
+  zip_code             String
+  user                 User?             @relation(fields: [user_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user_id              String?           @db.ObjectId
+  inquiry              Inquiry?          @relation(fields: [inquiry_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  inquiry_id           String?           @unique @db.ObjectId
+  franchise_request    FranchiseRequest? @relation(fields: [franchise_request_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  franchise_request_id String?           @unique @db.ObjectId
+  try_at_home          TryAtHome?        @relation(fields: [try_at_home_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  try_at_home_id       String?           @unique @db.ObjectId
+  orders               Order[]
+}

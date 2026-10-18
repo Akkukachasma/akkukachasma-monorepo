@@ -1,0 +1,36 @@
+"use client";
+import {
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Modal from "@/components/ui/modal";
+import React from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { showModal } from "@/store/frame-materials/form.slice";
+import FrameMaterialsForm from "./FrameMaterialForm";
+
+const AddLensDetailModal: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const modal = useAppSelector(
+    (store) => store.frameMaterialStore.formStore.modal,
+  );
+
+  return (
+    <Modal
+      showCloseIcon
+      open={modal}
+      onOpenChange={(val) => dispatch(showModal(val))}
+      className="max-w-[700px]"
+    >
+      <DialogHeader>
+        <DialogTitle>Add Frame Material</DialogTitle>
+        <DialogDescription>
+          Fill in the details to add a new frame material.
+        </DialogDescription>
+      </DialogHeader>
+      <FrameMaterialsForm />
+    </Modal>
+  );
+};
+export default AddLensDetailModal;

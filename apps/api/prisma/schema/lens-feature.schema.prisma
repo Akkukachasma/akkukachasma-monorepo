@@ -1,0 +1,14 @@
+model LensFeature {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at    DateTime?    @default(now())
+  updated_at    DateTime?    @updatedAt
+  image         File?
+  title         String
+  description   String
+  cart_items    CartItem[]
+  power_type    PowerType?   @relation(fields: [power_type_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  power_type_id String?      @unique @db.ObjectId
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id       String       @unique @db.ObjectId
+  lens_details  LensDetail[]
+}

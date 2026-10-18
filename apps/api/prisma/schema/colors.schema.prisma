@@ -1,0 +1,11 @@
+model Color {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  created_at     DateTime?      @default(now())
+  updated_at     DateTime?      @updatedAt
+  color          String
+  name           String
+  product_colors ProductColor[] @relation(fields: [product_color_ids], references: [id])
+  product_color_ids String[]   @db.ObjectId
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id        String         @unique @db.ObjectId
+}

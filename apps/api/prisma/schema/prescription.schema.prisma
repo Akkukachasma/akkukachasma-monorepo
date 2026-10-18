@@ -1,0 +1,22 @@
+model Prescription {
+  id         String           @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id    String           @db.ObjectId
+  type       PrescriptionType
+  comments   String?
+
+  // when prescription type is "fillup"
+  right_sph  String?
+  right_cyl  String?
+  right_axis String?
+  right_add  String?
+  left_sph   String?
+  left_cyl   String?
+  left_axis  String?
+  left_add   String?
+
+  // when prescription type is "photo"
+  image File?
+}

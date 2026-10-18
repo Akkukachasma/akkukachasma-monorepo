@@ -1,0 +1,14 @@
+model PowerType {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  created_at    DateTime?     @default(now())
+  updated_at    DateTime?     @updatedAt
+  image         File?
+  title         String
+  description   String
+  cart_items    CartItem[]
+  products      Product[]     @relation(fields: [product_ids], references: [id])
+  product_ids   String[]      @db.ObjectId
+  lens_features LensFeature[]
+  user          User          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id       String        @unique @db.ObjectId
+}

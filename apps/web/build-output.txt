@@ -1,0 +1,10 @@
+
+> akkukachasma.com@0.1.0 build /home/abhishek/Documents/qa.akkukachasma.com/frontend
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+ ELIFECYCLE  Command failed with exit code 1.

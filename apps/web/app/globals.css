@@ -1,50 +1,469 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 152 56% 46%;
+    --success-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --chart-1: 12 76% 61%;
+
+    --chart-2: 173 58% 39%;
+
+    --chart-3: 197 37% 24%;
+
+    --chart-4: 43 74% 66%;
+
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: var(--success);
+    --success-foreground: var(--success-foreground);
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+@layer base {
+  * {
+    @apply border-border;
   }
 
-  .imgLight {
-    display: none;
+  body {
+    @apply bg-background text-foreground;
   }
-  .imgDark {
-    display: unset;
+  /* table classes */
+  table.ak-table {
+    @apply min-w-full border-collapse;
   }
+  table.ak-table tr > th {
+    @apply min-w-fit text-nowrap py-4 text-start font-extrabold text-sm text-muted-foreground border-b;
+  }
+  table.ak-table tr > th:nth-child(1) {
+    @apply flex items-center justify-start pl-4;
+  }
+  table.ak-table tr > th:nth-last-child(1) {
+    @apply flex items-center justify-end pr-4;
+  }
+  table.ak-table tr > th:nth-child(1) > * {
+    @apply pl-4;
+  }
+  table.ak-table tr > th:nth-last-child(1) > * {
+    @apply flex items-center justify-end pr-4;
+  }
+  table.ak-table tbody {
+    @apply text-accent-foreground/70;
+  }
+
+  table.ak-table tbody > tr {
+    @apply !shadow-[0px_0px_20px_#00000005];
+  }
+
+  table.ak-table tr > td > * {
+    @apply h-12 flex text-nowrap text-sm items-center;
+  }
+
+  table.ak-table tr > td {
+    @apply bg-white;
+  }
+  table.ak-table tr > td:nth-child(1) {
+    @apply rounded-s-md;
+  }
+  table.ak-table tr > td:nth-last-child(1) {
+    @apply rounded-e-md;
+  }
+  table.ak-table tr > td:nth-child(1) > * {
+    @apply pl-4;
+  }
+  table.ak-table tr > td:nth-last-child(1) > * {
+    @apply flex items-center justify-end pr-4;
+  }
+
+  /* transition/animation classes */
+  .animate-smooth {
+    @apply ease-in-out duration-300;
+  }
+
+  /* custom text editor */
+  .custom-text-editor {
+    @apply border-none rounded-md border border-input px-3 py-1 shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .custom-text-editor img {
+    @apply !inline-block align-baseline;
+  }
+  .custom-text-editor .ql-container {
+    @apply !border-none;
+  }
+  .custom-text-editor .ql-toolbar {
+    @apply !border-none flex items-center flex-wrap gap-y-4;
+  }
+  .custom-text-editor .ql-editor {
+    @apply min-h-[10rem] rounded-md;
+  }
+  .editor-error .ql-editor {
+    @apply !border !border-solid !border-destructive;
+  }
+}
+
+/* used for notfound */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-bounce {
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+/* used for verifying , verified, already verified, token expired */
+@layer utilities {
+  /* Fade-in animation */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Spin animation */
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Bounce animation */
+  .animate-bounce {
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Pulse animation */
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .bg-grid-primary {
+    background-image:
+      linear-gradient(currentColor 1px, transparent 1px),
+      linear-gradient(to right, currentColor 1px, transparent 1px);
+  }
+
+  /* IMP: do not alter it without understanding its impact on application */
+  /* Standard page/content container: centered, max-width, responsive padding */
+  .app-container {
+    @apply px-2 sm:px-4 xl:w-[1650px] xl:mx-auto;
+  }
+}
+
+@layer base {
+  .article-container {
+    @apply min-w-0 max-w-full py-6 text-base leading-relaxed text-foreground;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .article-container h1 {
+    @apply text-2xl sm:text-3xl md:text-4xl font-bold mt-8 mb-4 text-foreground;
+  }
+
+  .article-container h2 {
+    @apply text-xl sm:text-2xl md:text-3xl font-semibold mt-6 mb-3 text-foreground;
+  }
+
+  .article-container h3 {
+    @apply text-lg sm:text-xl md:text-2xl font-semibold mt-5 mb-2 text-foreground;
+  }
+
+  .article-container h4 {
+    @apply text-base sm:text-lg md:text-xl font-medium mt-4 mb-2 text-foreground;
+  }
+
+  .article-container p {
+    @apply py-4 text-foreground/70;
+  }
+
+  .article-container a {
+    @apply p-[2px] underline text-primary;
+  }
+
+  .article-container a:hover {
+    @apply text-primary-foreground;
+  }
+
+  .article-container ul {
+    @apply list-disc list-outside mb-4 pl-5 text-foreground/70;
+  }
+
+  .article-container ol {
+    @apply list-decimal list-outside mb-4 pl-5 text-foreground/70;
+  }
+
+  .article-container li {
+    @apply mb-1;
+  }
+
+  .article-container blockquote {
+    @apply border-l-4 pl-4 italic my-6 text-muted-foreground border-border;
+  }
+
+  .article-container pre {
+    @apply bg-muted text-muted-foreground text-sm p-4 rounded-lg overflow-x-auto my-4 max-w-full;
+  }
+
+  .article-container code {
+    @apply bg-muted text-pink-600 dark:text-pink-400 px-1 py-0.5 rounded text-sm break-words;
+  }
+
+  .article-container hr {
+    @apply my-8 border-t border-border;
+  }
+
+  .article-container img,
+  .article-container video,
+  .article-container iframe,
+  .article-container embed,
+  .article-container object {
+    @apply my-6 max-w-full h-auto;
+  }
+
+  .article-container img {
+    @apply rounded-xl shadow-md;
+  }
+
+  .article-container video,
+  .article-container iframe {
+    @apply w-full aspect-video rounded-xl;
+  }
+
+  .article-container figure {
+    @apply my-6 max-w-full;
+  }
+
+  .article-container figure img {
+    @apply my-0;
+  }
+
+  .article-container table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    @apply my-6 border-collapse text-sm;
+  }
+
+  .article-container strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .article-container em {
+    @apply italic text-foreground;
+  }
+}
+
+/* Invoice PDF (html2canvas): show print-only header & hide admin-only columns */
+[data-invoice-pdf-export="1"] .invoice-pdf-export-show {
+  display: block !important;
+}
+
+[data-invoice-pdf-export="1"] .invoice-pdf-export-hide {
+  display: none !important;
+}
+
+/*
+ * Portal shells only (/customers/* account + /manage/* admin).
+ * Recessed page fill so borderless cards (card white) read as surfaces.
+ */
+.portal-shell {
+  background-color: hsl(var(--muted));
+}
+
+.dark .portal-shell {
+  background-color: hsl(var(--muted));
+}
+
+/* Flat headers — solid bar above the recessed page */
+[data-portal] > div > header,
+[data-portal] > header {
+  background-color: hsl(var(--card));
+  border-bottom-color: hsl(var(--border));
+}
+
+[data-portal] .portal-surface {
+  border-radius: var(--radius);
+  border: none;
+  background-color: hsl(var(--card));
+  box-shadow: none;
+}
+
+/* Flatten Card + admin list-row chrome inside portals only */
+[data-portal] .rounded-xl.border.bg-card,
+[data-portal] .rounded-xl.border.bg-card.shadow {
+  border-width: 0;
+  box-shadow: none;
+  background-color: hsl(var(--card));
+}
+
+[data-portal] .hover\:shadow-md:hover,
+[data-portal] .hover\:shadow-sm:hover {
+  box-shadow: none;
+}
+
+[data-portal] .grid.grid-cols-12.shadow-md.border.rounded-lg,
+[data-portal] .grid.grid-cols-12.shadow-md.border {
+  border-width: 0;
+  box-shadow: none;
+  background-color: hsl(var(--card));
+}
+
+[data-portal] .portal-empty {
+  border-radius: calc(var(--radius) + 4px);
+  border: none;
+  background-color: hsl(var(--card));
+  padding: 3rem 1rem;
+  text-align: center;
 }

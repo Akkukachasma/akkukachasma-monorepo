@@ -1,0 +1,104 @@
+enum FrameStyle {
+  FULL_FRAME
+  HALF_FRAME
+  RIMLESS
+}
+
+enum FrameSize {
+  EXTRA_NARROW
+  NARROW
+  MEDIUM
+  WIDE
+  EXTRA_WIDE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
+  OTHER
+}
+
+model Product {
+  id                        String         @id @default(auto()) @map("_id") @db.ObjectId
+  created_at                DateTime?      @default(now())
+  updated_at                DateTime?      @updatedAt
+  seo_title                 String
+  slug                      String         @unique //product slug
+  description               String
+  tags                      String[]
+  model_name                String
+  is_featured               Boolean        @default(false)
+  model_number              Int?           @unique // IMP: deprecated since june 28, 2025
+  gender                    Gender // who, this product is for
+  stock_quantity            Int? // how many products are there in stock   IMP: deprecated from may 05, 2025
+  lens_width                Float // unit mm
+  lens_height               Float // unit mm
+  frame_width               Float // unit mm
+  listing_price             Float // price just for listing.
+  price                     Float // price at which the product is to be sold.
+  discount_percent          Float // price discount percetage i.e 100 * (listing_price - price) / listing_price
+  raw_material_sourced_from String?        @default("Imported International")
+  lens_material             String?        @default("Demo Polycorbonate")
+  frame_style               FrameStyle
+  frame_size                FrameSize[]
+  power_types               PowerType[]    @relation(fields: [power_type_ids], references: [id])
+  power_type_ids            String[]       @db.ObjectId
+  product_colors            ProductColor[]
+  shape                     Shape?         @relation(fields: [shape_id], references: [id], onUpdate: Cascade, onDelete: SetNull)
+  shape_id                  String?        @db.ObjectId
+  frame_material            FrameMaterial? @relation(fields: [frame_material_id], references: [id], onUpdate: Cascade, onDelete: SetNull)
+  frame_material_id         String?        @db.ObjectId
+  category                  Category?      @relation(fields: [category_id], references: [id], onUpdate: Cascade, onDelete: SetNull)
+  category_id               String?        @db.ObjectId
+  user                      User           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id                   String         @unique @db.ObjectId
+  price_adjustment_items    ProductPriceAdjustmentItem[]
+
+  @@unique([model_number, price, model_name, power_type_ids])
+}
+
+model ProductColor {
+  id             String                  @id @default(auto()) @map("_id") @db.ObjectId
+  created_at     DateTime?               @default(now())
+  updated_at     DateTime?               @updatedAt
+  images         File[] // these images should include at least 1 featured image as its fieldname property
+  model_number   String?                 @unique
+  stock_quantity Int?
+  colors         Color[]                 @relation(fields: [color_ids], references: [id])
+  color_ids      String[]                @db.ObjectId
+  product        Product                 @relation(fields: [product_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product_id     String                  @unique @db.ObjectId
+  cart_items     CartItem[] // how many cart items reference this product color
+  popularity     Popularity?
+  wishlist       Wishlist[]
+  embeddings     ProductColorEmbedding[]
+}
+
+model ProductColorEmbedding {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at       DateTime?    @default(now())
+  updated_at       DateTime?    @updatedAt
+  product_color_id String       @db.ObjectId
+  product_color    ProductColor @relation(fields: [product_color_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sort_order       Int          @default(0)
+
+  video     File?   @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  embed_url String? // iframe / provider embed code snippet (stored as text)
+  fileId    String? @unique @db.ObjectId
+
+  @@map("product_color_embeddings")
+}
+
+model Popularity {
+  id                  String       @id @default(auto()) @map("_id") @db.ObjectId
+  updated_at          DateTime?    @updatedAt
+  product_color       ProductColor @relation(fields: [product_color_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product_color_id    String       @unique @db.ObjectId
+  score               Float        @default(0.0) // a calculated score based on other popularity metrics.
+  views               Int          @default(0) // how many time it was viewed.
+  times_liked         Int          @default(0) // how many time it was liked.
+  times_added_to_cart Int          @default(0) // how many time it was added to cart.
+  times_purchased     Int          @default(0) // how many time it was purchased.
+  times_shared        Int          @default(0) // how many time it was shared.
+}

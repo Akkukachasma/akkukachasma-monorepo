@@ -1,0 +1,19 @@
+enum InquirySource {
+    contact_us
+    product_page
+    blog
+    other
+}
+
+model Inquiry {
+    id         String    @id @default(auto()) @map("_id") @db.ObjectId
+    created_at DateTime? @default(now())
+    updated_at DateTime? @updatedAt
+    first_name String
+    last_name  String
+    email      String
+    phone      String
+    message    String?
+    source     InquirySource @default(contact_us)
+    address    Address?
+}

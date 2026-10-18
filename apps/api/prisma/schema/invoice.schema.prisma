@@ -1,0 +1,98 @@
+model Invoice {
+  id                     String        @id @default(auto()) @map("_id") @db.ObjectId
+  created_at             DateTime      @default(now())
+  updated_at             DateTime      @updatedAt
+  invoice_number         String        @unique // AKC/YY-YY/NN
+  financial_year         String
+  sequence_number        Int
+  order                  Order         @relation(fields: [order_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  order_id               String        @unique @db.ObjectId
+  status                 InvoiceStatus @default(unpaid)
+  issued_date            DateTime      @default(now())
+  paid_at                DateTime?
+  voided_at              DateTime?
+  notes                  String?
+  terms_conditions       String?
+
+  // Invoice totals
+  subtotal               Float         @default(0.0)
+  tax_total              Float         @default(0.0)
+  /** Paise: GST lump rounding vs computed (intra odd paise); + down, − up. */
+  gst_rounded_by         Int           @default(0)
+  discount_on_mrp_total  Float         @default(0.0)
+  coupon_discount_total  Float         @default(0.0)
+  shipping_total         Float         @default(0.0)
+  grand_total            Float         @default(0.0)
+
+  // Invoice items with detailed breakdown
+  invoice_items          InvoiceItem[]
+
+  @@index([financial_year, sequence_number])
+}
+
+model InvoiceItem {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  invoice         Invoice   @relation(fields: [invoice_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  invoice_id      String    @db.ObjectId
+
+  /** Links back to the order line this row was generated from (admin line cancel + order sync). */
+  order_item_id   String?   @db.ObjectId
+  cancelled_at    DateTime?
+  /** Set after successful restoreStock for this line (idempotent retries). */
+  stock_restored_at DateTime?
+  cancel_reason   String?
+
+  // Product information
+  product_name    String
+  product_sku     String?
+  product_color   Json?     // Store color information
+  power_type      Json?     // Store power type information
+  lens_feature    Json?     // Store lens feature information
+  lens_detail     Json?     // Store lens detail information
+  frame_only      Boolean   @default(false)
+
+  // Pricing
+  unit_price      Float     @default(0.0)
+  quantity        Int       @default(1)
+  subtotal        Float     @default(0.0)
+  discount_amount Float     @default(0.0)
+  tax_amount      Float     @default(0.0)
+  total_amount    Float     @default(0.0)
+
+  // Tax breakdown
+  taxes           InvoiceItemTax[]
+
+  @@index([invoice_id])
+}
+
+model InvoiceItemTax {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  invoice_item    InvoiceItem   @relation(fields: [invoice_item_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  invoice_item_id String        @db.ObjectId
+
+  tax_name        String        // e.g., "GST", "CGST", "SGST"
+  tax_type        String        // e.g., "percentage", "fixed"
+  tax_rate        Float         // e.g., 18.0 for 18%
+  tax_amount      Float         // Calculated tax amount
+  tax_description String?       // Additional description
+
+  @@index([invoice_item_id])
+}
+
+model InvoiceSequence {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  financial_year  String        @unique
+  last_number     Int           @default(0)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
+
+enum InvoiceStatus {
+  unpaid
+  paid
+  void
+}

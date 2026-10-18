@@ -1,0 +1,48 @@
+{
+  "admin": {
+    "name": "Admin",
+    "description": "Administrator; gets every permission. Ownership layer bypasses for admin.",
+    "is_system_role": true,
+    "is_active": true,
+    "permissions": ["*"]
+  },
+  "customer": {
+    "name": "Customer",
+    "description": "Customer; same permission codes as needed, ownership enforces own resources only.",
+    "is_system_role": true,
+    "is_active": true,
+    "permissions": [
+      "orders:list",
+      "order:view",
+      "order:create",
+      "order:update",
+      "products:list",
+      "product:view",
+      "invoices:list",
+      "invoice:view"
+    ]
+  },
+  "staff": {
+    "name": "Staff",
+    "description": "Limited admin access; staff can view/manage orders, products, users but not full settings.",
+    "is_system_role": true,
+    "is_active": true,
+    "permissions": [
+      "dashboard:view",
+      "orders:list",
+      "order:view",
+      "products:list",
+      "product:view",
+      "product:update",
+      "product-embedding:view",
+      "product-embedding:manage",
+      "hero-media:view",
+      "hero-media:manage",
+      "users:list",
+      "user:view",
+      "invoices:list",
+      "invoice:view",
+      "activities:list"
+    ]
+  }
+}

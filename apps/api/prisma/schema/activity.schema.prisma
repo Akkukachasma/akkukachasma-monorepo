@@ -1,0 +1,20 @@
+enum ActivityType {
+  INFO
+  SUCCESS
+  ERROR
+  WARNING
+  ALERT
+}
+
+model Activity {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  created_at  DateTime     @default(now())
+  type        ActivityType? @default(INFO)
+  title       String       // Optional for legacy activities
+  description String?
+  detail      Json // Flexible payload for API logs, errors, context
+  user        User?        @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user_id     String?      @db.ObjectId
+
+  @@map("activities")
+}

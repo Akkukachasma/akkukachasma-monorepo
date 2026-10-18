@@ -1,0 +1,41 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BannerImageController } from './banner-image.controller';
+import { BannerImageService } from './banner-image.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { FileService } from '../../file/file.service';
+import { BucketService } from '../../bucket/bucket.service';
+import { CacheService } from '../../cache/cache.service';
+import { createMockCacheService } from '../../test/mock-cache.service';
+import { NotificationsDispatchService } from '../../notifications/notifications-dispatch.service';
+
+describe('BannerImageController', () => {
+  let controller: BannerImageController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [BannerImageController],
+      providers: [
+        BannerImageService,
+        { provide: PrismaService, useValue: {} },
+        { provide: FileService, useValue: {} },
+        { provide: BucketService, useValue: {} },
+        { provide: CacheService, useValue: createMockCacheService() },
+        {
+          provide: NotificationsDispatchService,
+          useValue: {
+            notifyResourceMutation: jest.fn().mockResolvedValue(undefined),
+            notifyPortalUsers: jest.fn().mockResolvedValue(undefined),
+            notifyAdminsNewOrder: jest.fn(),
+            dispatchToUser: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    controller = module.get<BannerImageController>(BannerImageController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});

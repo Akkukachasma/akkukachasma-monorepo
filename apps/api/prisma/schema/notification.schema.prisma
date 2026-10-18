@@ -1,0 +1,100 @@
+// Enums
+enum NotificationSeverity {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+}
+
+enum NotificationType {
+    ORDER_PLACED
+    ORDER_SHIPPED
+    ORDER_DELIVERED
+    PAYMENT_FAILED
+    REFUND_PROCESSED
+    PASSWORD_CHANGED
+    PROMOTION
+    SYSTEM
+    ADMIN_ACTIVITY
+    RESOURCE_MUTATION
+}
+
+enum NotificationCategory {
+    order
+    payment
+    account
+    promotion
+    system
+}
+
+enum DeliveryChannel {
+    EMAIL
+    WHATSAPP
+    SMS
+    IN_APP
+    PUSH
+}
+
+enum DeliveryStatus {
+    PENDING
+    SENT
+    DELIVERED
+    FAILED
+}
+
+/** Where the notification is shown: storefront vs manage app only. */
+enum NotificationAudience {
+    customer
+    admin
+}
+
+// the notification event
+model Notification {
+    id          String                 @id @default(auto()) @map("_id") @db.ObjectId
+    created_at  DateTime               @default(now())
+    expires_at  DateTime?
+    audience    NotificationAudience   @default(customer)
+    // event enums
+    severity    NotificationSeverity   @default(LOW)
+    type        NotificationType
+    category    NotificationCategory
+    // meta
+    title       String
+    body        String?
+    data        Json
+    // reciept
+    read_at     DateTime?
+    // entity linking (what triggered the notification)
+    entity_type String?
+    entity_id   String?
+    // user linking
+    user        User                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    user_id     String                 @db.ObjectId
+    // deliveries linking
+    deliveries  NotificationDelivery[]
+
+    @@index([user_id, audience, created_at])
+    @@map("notifications")
+}
+
+// the notification delivery
+model NotificationDelivery {
+    id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+    created_at          DateTime        @default(now())
+    // notification linking
+    notification        Notification    @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+    notification_id     String          @db.ObjectId
+    // channel of delivery
+    channel             DeliveryChannel
+    status              DeliveryStatus  @default(PENDING)
+    // provider linking
+    provider_message_id String?
+    // attempt count
+    attempt_count       Int             @default(0)
+    // important stamps
+    sent_at             DateTime?
+    delivered_at        DateTime?
+    failed_at           DateTime?
+
+    @@map("notification_deliveries")
+}

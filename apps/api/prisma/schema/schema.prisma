@@ -1,0 +1,74 @@
+// =======================================================================
+//                      Comment Codes & Database Rules
+// =======================================================================
+//  TEMP                      : entity should be removed in future
+//  NOTE                      : information to keep in mind about an entity
+//  IMP                       : important instruction, high priority
+//  primary relations         : relations that destroy the model
+//  secondary relations       : relations that only use the model
+//
+//
+//  *almost all table should have the field created_at and updated_at
+//  *always use snake case names for database column
+//  *there should not be any orphan model unless it is meant to be managed by superuser
+// ========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ===================================================================
+//                        Common Schemas
+// ===================================================================
+
+// blacklisting of tokens
+model Token {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  token      String    @unique
+  iat        Int
+  exp        Int
+}
+
+// schema for files
+model File {
+  id                      String                 @id @default(auto()) @map("_id") @db.ObjectId
+  created_at              DateTime?              @default(now())
+  updated_at              DateTime?              @updatedAt
+  key                     String
+  fieldname               String
+  type                    String?
+  url                     String?
+  is_temp                 Boolean                @default(true)
+  user                    User?                  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id                 String?                @unique @db.ObjectId
+  power_type              PowerType?             @relation(fields: [power_type_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  power_type_id           String?                @unique @db.ObjectId
+  lens_feature            LensFeature?           @relation(fields: [lens_feature_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  lens_feature_id         String?                @unique @db.ObjectId
+  lens_detail             LensDetail?            @relation(fields: [lens_detail_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  lens_detail_id          String?                @unique @db.ObjectId
+  shape                   Shape?                 @relation(fields: [shape_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  shape_id                String?                @unique @db.ObjectId
+  category                Category?              @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category_id             String?                @unique @db.ObjectId
+  article                 Article?               @relation(fields: [article_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  article_id              String?                @unique @db.ObjectId
+  product_color           ProductColor?          @relation(fields: [product_color_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product_color_id        String?                @db.ObjectId
+  banner_image            BannerImage?           @relation(fields: [banner_image_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  banner_image_id         String?                @unique @db.ObjectId
+  prescription            Prescription?          @relation(fields: [prescription_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  prescription_id         String?                @unique @db.ObjectId
+  hero_media              HeroMedia?             @relation(fields: [hero_media_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hero_media_id           String?                @db.ObjectId
+  /** Display order within a HeroMedia slider/banner (0 = first). */
+  hero_media_sort_order   Int?
+  product_color_embedding ProductColorEmbedding?
+}

@@ -1,0 +1,15 @@
+enum HeroMediaType {
+  BANNER
+  SLIDER
+}
+model HeroMedia {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  type       HeroMediaType @default(BANNER)
+  files      File[]
+  title      String?
+  is_active  Boolean   @default(false)
+
+  @@index([is_active])
+}

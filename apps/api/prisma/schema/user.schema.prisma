@@ -1,0 +1,44 @@
+model User {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  created_at         DateTime?          @default(now())
+  updated_at         DateTime?          @updatedAt
+  email              String             @unique
+  name               String
+  phone_number       String?
+  email_verified     DateTime?
+  deleted_at         DateTime?
+  agree_t_and_c      Boolean
+  credentials        Credential?
+  avatar             File?
+  user_roles         UserRole[]
+  // this relations are only for admin
+  power_types        PowerType[]
+  lens_features      LensFeature[]
+  lens_details       LensDetail[]
+  frame_materials    FrameMaterial[]
+  brands             Brand[]
+  colors             Color[]
+  shapes             Shape[]
+  categories         Category[]
+  coupons            Coupon[]
+  products           Product[]
+  product_price_adjustments ProductPriceAdjustment[]
+  cart               Cart?
+  orders             Order[]
+  prescriptions      Prescription[]
+  coupon_redemptions CouponRedemption[]
+  addresses          Address[]
+  setting            Setting?
+  wishlist           Wishlist[]
+  company_info_updates CompanyInfo[] // relation to company info updates
+  activities          Activity[]
+  notifications       Notification[]
+  file_upload_sessions FileUploadSession[]
+}
+
+model Credential {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  password String
+  user     User?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id  String? @unique @db.ObjectId
+}

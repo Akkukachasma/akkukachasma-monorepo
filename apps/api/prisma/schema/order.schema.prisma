@@ -1,0 +1,118 @@
+enum OrderStatus {
+  initiated // user started the checkout process | if the user don't confirms the order until 24 hour of initiation it will be removed automatically
+  cancelled // either user or admin cancelled the order
+  confirmed // either admin has explicitly confirmed the order or user has made the payment either by using COD or online mode
+  picked // deliver partner has picked the product and out for delivery
+  delivered // product has been delivered to the user
+}
+
+enum PaymentStatus {
+  pending // means user hasn't paid it
+  failed // transaction was failed due to any reason
+  completed // payment completed successfully
+}
+
+enum PaymentMode {
+  online // online means
+  cod // Cash on Delivery ( subject to eventual order cancellation )
+}
+
+enum OrderSource {
+  cart
+  direct
+}
+
+model Order {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  order_id     String?       @unique // razor pay order id to track payment attempts
+  created_at   DateTime?     @default(now())
+  updated_at   DateTime?     @updatedAt
+  status       OrderStatus   @default(initiated)
+  notes        String?
+  order_items  OrderItem[]
+  payment      OrderPayment?
+  pricing      OrderPricing?
+  deleted_at   DateTime? // helps soft deleting
+  cancelled_at DateTime? // this one and following three are just for tracking the state of the order
+  confirmed_at DateTime?
+  picked_at    DateTime?
+  delivered_at DateTime?
+  user         User          @relation(fields: [user_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user_id      String        @db.ObjectId
+  address      Address?      @relation(fields: [address_id], references: [id], onUpdate: Cascade, onDelete: SetNull)
+  address_id   String?       @db.ObjectId
+  source       OrderSource?  // cart or direct checkout
+  invoice       Invoice?      // relation to invoice
+  shipment_details OrderShipmentDetails?
+}
+
+model OrderShipmentDetails {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  order_id           String    @unique @db.ObjectId
+  order              Order     @relation(fields: [order_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  waybill_number     String?
+  tracking_url       String?
+  delivery_partner   String?
+  estimated_delivery DateTime?
+  actual_delivery    DateTime?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+}
+
+model OrderPricing {
+  id                String @id @default(auto()) @map("_id") @db.ObjectId
+  order             Order  @relation(fields: [order_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  order_id          String @unique @db.ObjectId
+  base_subtotal     Float? @default(0.0) // sum frame's listing price + lens detail price
+  subtotal          Float? @default(0.0) // sum frame's actual price + lens detail price
+  discount_on_mrp   Float? @default(0.0) // total listing price - total selling price
+  lens_detail_price Float? @default(0.0) // total lens detail pricing
+  shipping_price    Float? @default(0.0) // only applicable if mode of payment is COD
+  applied_coupon    Json? // Json conforming {coupon: {//again json}, discount: number} // discount is exact amount that was deducted.
+  total             Float? @default(0.0) // final amount that needs to be paid
+}
+
+model OrderItem {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  order         Order          @relation(fields: [order_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  order_id      String         @db.ObjectId
+  product_color Json //  order/types.d.ts
+  power_type    Json
+  lens_feature  Json
+  lens_detail   Json
+  frame_only    Boolean        @default(false)
+  prescription  Json? // refer to prescription schema
+  quantity      Int            @default(1)
+  price         Float?         @default(0.0) // it includes the price of the frame and any lens if selected.
+  discount      Float?         @default(0.0) // discount applied on the product
+  /** Set when admin cancels the line from the invoice (stock restored); order cancel skips restore for these. */
+  admin_cancelled_at DateTime?
+  cancel_reason      String?
+  taxes         OrderItemTax[]
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+}
+
+model OrderPayment {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  order          Order          @relation(fields: [order_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  order_id       String         @unique @db.ObjectId
+  status         PaymentStatus? @default(pending)
+  mode           PaymentMode?   @default(online)
+  transaction_id String? // ID from Stripe/Razorpay/etc.
+  provider       String? // 'stripe', 'razorpay', 'cashfree', etc.
+  paid_at        DateTime?
+  signature      String?        @unique // razorpay_signature
+}
+
+model OrderItemTax {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  order_item    OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  order_item_id String    @db.ObjectId
+  name          String?
+  tax_type      String
+  tax_rate      Float
+  tax_amount    Float // calculated tax amount for this order item
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+}

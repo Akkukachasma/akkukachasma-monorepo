@@ -1,0 +1,71 @@
+model Setting {
+  id           String               @id @default(auto()) @map("_id") @db.ObjectId
+  created_at   DateTime?            @default(now())
+  updated_at   DateTime?            @updatedAt
+  taxes        InvoiceTax[]
+  notification NotificationSetting?
+  user         User                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user_id      String               @unique @db.ObjectId
+}
+
+model CompanyInfo {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  cod_enabled     Boolean   @default(true)
+  
+  // Company Details
+  company_name    String    // e.g., "Akku Ka Chasma"
+  store_name      String    // e.g., "JEEVANBHIMA NAGAR STORE"
+  store_address   String    // e.g., "Akku Ka Chasma (GROUND FLOOR)"
+  full_address    String    // e.g., "Jeevanbhima Nagar Main Road (29) - 560075"
+  email           String    // e.g., "support@akkukachasma.com"
+  phone           String    // e.g., "9999899998"
+  website         String    // e.g., "www.akkukachasma.com"
+  
+  // Legal Information
+  gstin           String    // e.g., "06AADCD9571D1ZO"
+  cin             String?   // Company Identification Number
+  pan             String?   // Permanent Account Number
+  
+  // Signature (raw base64 image payload for invoices / admin preview)
+  signature       String?
+  
+  // Updated by relation (no direct relation with user)
+  updated_by      User      @relation(fields: [updated_by_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  updated_by_id   String    @db.ObjectId
+  
+  @@index([updated_by_id])
+}
+
+model NotificationSetting {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  phone      Boolean   @default(true)
+  email      Boolean   @default(true)
+  in_app     Boolean   @default(true)
+  setting    Setting   @relation(fields: [setting_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  setting_id String    @unique @db.ObjectId
+}
+
+enum InvoiceTaxType {
+  GST
+  VAT
+  OTHER
+}
+
+model InvoiceTax {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  created_at   DateTime?      @default(now())
+  updated_at   DateTime?      @updatedAt
+  label        String
+  description  String?        @default("")
+  type         InvoiceTaxType @default(OTHER)
+  percentage   Float          @default(0)
+  hsn_code     String?        // e.g. "9004" for eyewear (Delhivery GST)
+  categories   Category[]     @relation(fields: [category_ids], references: [id]) // products from these categories will have this tax applied.
+  category_ids String[]       @db.ObjectId
+  setting      Setting        @relation(fields: [setting_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  setting_id   String         @unique @db.ObjectId
+}

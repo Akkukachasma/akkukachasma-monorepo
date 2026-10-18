@@ -1,0 +1,46 @@
+enum BannerType {
+  masonry
+  grid
+  carousel
+  slider
+}
+
+enum BannerAspectRatio {
+  landscape // 16:9
+  portrait // 9:16
+  cinematic // 21:9
+  square // 1:1
+  standard // 4:3
+  vertical // 3:4
+  ultrawide // 4:1
+  ribbon // 8:1
+}
+
+model Banner {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  created_at   DateTime?  @default(now())
+  updated_at   DateTime?  @updatedAt
+  order        Int        @unique
+  type         BannerType
+  aspect_ratio BannerAspectRatio @default(landscape)
+  title        String?
+  banner_images BannerImage[]
+  show_on_home Boolean    @default(false)
+  is_active    Boolean    @default(true)
+  categories   Category[] @relation(fields: [category_ids], references: [id])
+  category_ids String[]   @db.ObjectId
+  shapes         Shape[]    @relation(fields: [shape_ids], references: [id])
+  shape_ids      String[]   @db.ObjectId
+  slides_per_view Int?      // Only used when type=slider; default 3 on frontend if null
+}
+
+model BannerImage {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  image     File?
+  url       String?
+  order     Int
+  banner    Banner  @relation(fields: [banner_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  banner_id String  @db.ObjectId
+}
