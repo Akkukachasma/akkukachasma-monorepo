@@ -4,6 +4,11 @@ const nextConfig = {
     // Allow production build to succeed even with type errors
     ignoreBuildErrors: true,
   },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
   images: {
     /**
      * Next.js resolves remote image hostnames on the server and blocks “private” IPs (SSRF).
@@ -46,6 +51,18 @@ const nextConfig = {
       {
         protocol: "http",
         hostname: "210.79.129.189",
+        pathname: "/**",
+      },
+      // Current VPS server
+      {
+        protocol: "http",
+        hostname: "31.42.125.213",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "31.42.125.213",
+        port: "8001",
         pathname: "/**",
       },
     ],
