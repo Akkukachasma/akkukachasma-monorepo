@@ -8,6 +8,8 @@ const ENDPOINTS = {
     resend_verification_mail: "auth/resend-verification-link",
     forgot: "auth/forgot",
     reset_password: (token: string) => `auth/reset-password?token=${token}`,
+    phone_send_otp: "auth/phone/send-otp",
+    phone_verify_otp: "auth/phone/verify-otp",
   },
     admin: {
     orders: {

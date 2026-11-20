@@ -40,7 +40,7 @@ const ProductCard1 = React.forwardRef<HTMLDivElement, ProductCardProps>(
         onMouseEnter={() => router.prefetch(href)}
         ref={ref}
         className={cn(
-          "relative block h-full w-full max-w-[400px] cursor-pointer overflow-hidden rounded-xl border border-transparent bg-card text-card-foreground shadow-sm animate-smooth hover:shadow-lg dark:border-border/60",
+          "relative block h-full w-full max-w-[400px] mx-auto cursor-pointer overflow-hidden rounded-xl border border-transparent bg-card text-card-foreground shadow-sm animate-smooth hover:shadow-lg dark:border-border/60",
           compact && "rounded-lg shadow-none",
           className,
         )}

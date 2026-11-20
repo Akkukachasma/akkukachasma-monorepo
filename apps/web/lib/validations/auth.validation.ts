@@ -66,6 +66,21 @@ export const signupSchema = z.object({
   }),
 });
 
+export const phoneOtpSendSchema = z.object({
+  phone_number: z
+    .string()
+    .length(10, "Mobile number must be exactly 10 digits")
+    .regex(/^[6-9]\d{9}$/, "Please enter a valid Indian mobile number"),
+});
+
+export const phoneOtpVerifySchema = z.object({
+  phone_number: z.string().length(10),
+  otp: z
+    .string()
+    .length(6, "OTP must be exactly 6 digits")
+    .regex(/^\d{6}$/, "OTP must contain only digits"),
+});
+
 export const ResendVerificationSchema = z.object({
   email: z
     .string()

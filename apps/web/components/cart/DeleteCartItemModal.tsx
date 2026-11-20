@@ -1,11 +1,6 @@
 "use client";
 import { Button, ProcessIndicator } from "@/components/ui/button";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogFooter, DialogHeaderWithClose } from "@/components/ui/dialog";
 import Modal from "@/components/ui/modal";
 import React from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -16,31 +11,43 @@ const DeleteCartItemModal: React.FC = () => {
   const dispatch = useAppDispatch();
   const { mutate: deleteItem, isPending } = useRemoveProductFromCart();
 
-  // Accessing delete_modal from store
   const itemToDelete = useAppSelector((store) => store.cartStore.itemToDelete);
+
+  const handleDelete = () => {
+    if (!itemToDelete?.id) return;
+    deleteItem(itemToDelete.id);
+  };
 
   return (
     <Modal
-      showCloseIcon
+      showCloseIcon={false}
       open={Boolean(itemToDelete)}
-      onOpenChange={(val) =>
-        dispatch(setItemToDelete(val ? itemToDelete : null))
-      }
+      onOpenChange={(val) => {
+        if (isPending) return;
+        dispatch(setItemToDelete(val ? itemToDelete : null));
+      }}
     >
-      <DialogHeader>
-        <DialogTitle>Remove Item From Cart</DialogTitle>
-        {/* Changed title to match delete purpose */}
-        <DialogDescription>
-          Are you sure you want to remove this item from your cart? This action
-          cannot be undone.
-        </DialogDescription>
-        {/* Updated description to reflect delete action */}
-      </DialogHeader>
-      <DialogFooter>
-        <Button variant="destructive" onClick={() => deleteItem()}>
+      <DialogHeaderWithClose
+        className="text-center sm:text-center"
+        title="Remove Item From Cart"
+        description="Are you sure you want to remove this item from your cart? This action cannot be undone."
+      />
+      <DialogFooter className="flex-col gap-3 sm:flex-row sm:gap-2 mt-1">
+        <Button
+          variant="destructive"
+          disabled={isPending}
+          onClick={handleDelete}
+          className="w-full sm:w-auto"
+        >
           <ProcessIndicator isProcessing={isPending} btnText="Confirm Delete" />
         </Button>
-        <Button onClick={() => dispatch(setItemToDelete(null))}>Cancel</Button>
+        <Button
+          disabled={isPending}
+          onClick={() => dispatch(setItemToDelete(null))}
+          className="w-full sm:w-auto"
+        >
+          Cancel
+        </Button>
       </DialogFooter>
     </Modal>
   );

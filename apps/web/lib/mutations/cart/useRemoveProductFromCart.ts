@@ -1,21 +1,21 @@
 import { getApiClient, getErrorMessage, RequestError } from "@/lib/api";
 import ENDPOINTS from "@/lib/endpoints";
 import { toast } from "@/lib/hooks/use-toast";
-import { useAppDispatch, useAppSelector } from "@/store";
+import { useAppDispatch } from "@/store";
 import { setItemToDelete } from "@/store/cart.slice";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useRemoveProductFromCart = () => {
   const api = getApiClient();
   const dispatch = useAppDispatch();
-  const cart_item_id = useAppSelector(
-    (store) => store.cartStore.itemToDelete?.id,
-  );
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (cart_item_id: string) => {
+      if (!cart_item_id) {
+        throw new Error("Cart item ID is required");
+      }
       const response = await api.delete(
-        ENDPOINTS.cart.remove_product(cart_item_id || ""),
+        ENDPOINTS.cart.remove_product(cart_item_id),
       );
       return response.data;
     },
@@ -25,9 +25,13 @@ const useRemoveProductFromCart = () => {
         variant: "success",
       });
       dispatch(setItemToDelete(null));
-      queryClient.invalidateQueries({ queryKey: [ENDPOINTS.cart.fetch_items] });
-      queryClient.invalidateQueries({
+      queryClient.refetchQueries({
+        queryKey: [ENDPOINTS.cart.fetch_items],
+        type: "all",
+      });
+      queryClient.refetchQueries({
         queryKey: [ENDPOINTS.cart.checkout_preview],
+        type: "all",
       });
     },
     onError: (error: RequestError) => {

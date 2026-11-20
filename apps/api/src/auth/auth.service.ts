@@ -10,8 +10,10 @@ import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { TokenService } from '../token/token.service';
 import { MailService } from '../mail/mail.service';
+import { SmsService } from '../sms/sms.service';
 import dayjs from '../../lib/custom-dayjs';
 import { ResetPasswordDto } from './dto/password.dto';
+import { randomInt } from 'crypto';
 
 interface IResetPassword extends IWithTransactionClient {
   data: ResetPasswordDto;
@@ -32,12 +34,16 @@ export interface GoogleUserProfile {
   lastName?: string;
 }
 
+const OTP_TTL_MINUTES = 5;
+const OTP_MAX_ATTEMPTS = 3;
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private tokenService: TokenService,
     private mailService: MailService,
+    private smsService: SmsService,
     private readonly rbacService: RbacService,
     private readonly activityLogger: ActivityLoggerService,
   ) {}
@@ -233,5 +239,106 @@ export class AuthService {
 
     const roles = await this.rbacService.getRolesForUser(user.id);
     return { ...user, roles };
+  }
+
+  // ─── Phone OTP Auth ───────────────────────────────────────────────────────
+
+  async sendPhoneOtp(phoneNumber: string): Promise<{ message: string }> {
+    // Check if user exists and is not deleted
+    const existingUser = await this.prisma.user.findUnique({
+      where: { phone_number: phoneNumber },
+    });
+    if (existingUser?.deleted_at) {
+      throw new BadRequestException({
+        success: false,
+        message: 'Your account has been blocked by the administrator.',
+      });
+    }
+
+    const otp = String(randomInt(100000, 999999));
+    const otpHash = await hashString(otp);
+    const expiresAt = dayjs().add(OTP_TTL_MINUTES, 'minute').toDate();
+
+    // Upsert OTP record (one active OTP per phone number)
+    await this.prisma.phoneOtp.upsert({
+      where: { phone_number: phoneNumber },
+      create: { phone_number: phoneNumber, otp_hash: otpHash, expires_at: expiresAt, attempts: 0 },
+      update: { otp_hash: otpHash, expires_at: expiresAt, attempts: 0 },
+    });
+
+    const sent = await this.smsService.sendOtp(phoneNumber, otp);
+    if (!sent) {
+      throw new BadRequestException({
+        success: false,
+        message: 'Failed to send OTP. Please try again.',
+      });
+    }
+
+    return { message: `OTP sent to ${phoneNumber}. Valid for ${OTP_TTL_MINUTES} minutes.` };
+  }
+
+  async verifyPhoneOtp(
+    phoneNumber: string,
+    otp: string,
+  ): Promise<{ user: any; roles: string[] }> {
+    const record = await this.prisma.phoneOtp.findUnique({
+      where: { phone_number: phoneNumber },
+    });
+
+    if (!record) {
+      throw new BadRequestException({ success: false, message: 'OTP not found. Please request a new OTP.' });
+    }
+
+    if (dayjs().isAfter(dayjs(record.expires_at))) {
+      await this.prisma.phoneOtp.delete({ where: { phone_number: phoneNumber } });
+      throw new BadRequestException({ success: false, message: 'OTP has expired. Please request a new OTP.' });
+    }
+
+    if (record.attempts >= OTP_MAX_ATTEMPTS) {
+      await this.prisma.phoneOtp.delete({ where: { phone_number: phoneNumber } });
+      throw new BadRequestException({ success: false, message: 'Too many incorrect attempts. Please request a new OTP.' });
+    }
+
+    const isValid = await compareString(otp, record.otp_hash);
+    if (!isValid) {
+      await this.prisma.phoneOtp.update({
+        where: { phone_number: phoneNumber },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new BadRequestException({ success: false, message: 'Invalid OTP.' });
+    }
+
+    // OTP verified — delete record
+    await this.prisma.phoneOtp.delete({ where: { phone_number: phoneNumber } });
+
+    // Find or create user
+    const customerRole = await this.prisma.role.findUnique({ where: { code: 'customer' } });
+
+    let user = await this.prisma.user.findUnique({ where: { phone_number: phoneNumber } });
+    if (!user) {
+      const placeholderEmail = `phone_${phoneNumber}@phone.akkukachasma.com`;
+      user = await this.prisma.user.create({
+        data: {
+          phone_number: phoneNumber,
+          email: placeholderEmail,
+          name: phoneNumber,
+          agree_t_and_c: true,
+          phone_verified: dayjs().toDate(),
+          email_verified: dayjs().toDate(),
+          ...(customerRole && {
+            user_roles: { create: { role_id: customerRole.id } },
+          }),
+        },
+      });
+    } else {
+      // Mark phone as verified
+      user = await this.prisma.user.update({
+        where: { phone_number: phoneNumber },
+        data: { phone_verified: dayjs().toDate() },
+      });
+    }
+
+    const roles = await this.rbacService.getRolesForUser(user.id);
+    return { user, roles };
   }
 }

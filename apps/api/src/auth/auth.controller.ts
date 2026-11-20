@@ -44,6 +44,7 @@ import {
 import { Tokens } from '../token/decorators/tokens.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import { SendPhoneOtpDto, VerifyPhoneOtpDto } from './dto/phone-otp.dto';
 import { RbacService } from '../rbac/services/rbac.service';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { randomBytes } from 'crypto';
@@ -477,6 +478,44 @@ export class AuthController {
         new_token: new_token,
         refresh_token: new_refresh_token,
       },
+    });
+  }
+
+  // ─── Phone OTP Auth ─────────────────────────────────────────────────────
+
+  @PublicApi()
+  @Post('phone/send-otp')
+  @ApiOperation({ description: 'Send a 6-digit OTP to the given phone number via SMS.' })
+  async sendPhoneOtp(@Body() dto: SendPhoneOtpDto) {
+    const result = await this.authService.sendPhoneOtp(dto.phone_number);
+    return { success: true, ...result };
+  }
+
+  @PublicApi()
+  @Post('phone/verify-otp')
+  @ApiOperation({ description: 'Verify the OTP and issue a session. Creates the user if first time.' })
+  async verifyPhoneOtp(
+    @Body() dto: VerifyPhoneOtpDto,
+    @Res() response: Response,
+  ) {
+    const { user, roles } = await this.authService.verifyPhoneOtp(dto.phone_number, dto.otp);
+
+    const tokenPayload: ITenant = {
+      id: user.id,
+      email: user.email,
+      roles,
+      created_at: user.created_at,
+    };
+
+    const { authToken, refreshToken, authTokenAge } = this.issueSessionCookies(response, tokenPayload);
+
+    return response.status(HttpStatus.OK).json({
+      success: true,
+      data: {
+        auth_token: { value: authToken, type: TOKENS.auth_token, life: Date.now() + authTokenAge },
+        refresh_token: refreshToken,
+      },
+      message: 'Phone number verified. Logged in successfully.',
     });
   }
 

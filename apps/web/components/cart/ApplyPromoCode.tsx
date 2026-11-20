@@ -59,7 +59,7 @@ const ApplyPromoCode: React.FC<ApplyPromoCodeProps> = ({
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <label className="relative block font-bold text-lg">
+      <label className="flex flex-wrap items-center gap-2 font-bold text-lg">
         Apply Promo Code <OfferListModal />
       </label>
       <div className="relative">

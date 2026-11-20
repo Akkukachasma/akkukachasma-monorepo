@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   NotFoundException,
   Param,
   Patch,
@@ -253,6 +254,7 @@ export class CartController {
 
   @Get()
   @PublicApi()
+  @Header('Cache-Control', 'no-store')
   @Cacheable({ ttl: 60, scope: 'user' })
   @ApiOperation({
     description:
@@ -313,6 +315,7 @@ export class CartController {
 
   @Get('checkout-preview')
   @PublicApi()
+  @Header('Cache-Control', 'no-store')
   @Cacheable({ ttl: 60, scope: 'user' })
   @ApiOperation({
     description:

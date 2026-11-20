@@ -11,7 +11,7 @@ const OfferListModal = () => {
     <React.Fragment>
       <Button
         size="sm"
-        className="px-1 h-6 text-[10px] bg-success absolute -top-1 left-[105%]"
+        className="px-1 h-6 text-[10px] bg-success"
         onClick={() => setOpen(true)}
       >
         See Offers

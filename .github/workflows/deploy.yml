@@ -1,0 +1,121 @@
+# ============================================================
+#  Production Deploy — Akkukachasma Monorepo
+# ============================================================
+#
+#  Triggers on every push to `main` (or manual dispatch).
+#  Two sequential jobs:
+#    1. deploy-api  — builds NestJS API  → restarts PM2 akkukachasma-api
+#    2. deploy-web  — builds Next.js Web → restarts PM2 akkukachasma-web
+#
+#  Required GitHub Secrets  (Settings → Secrets → Actions):
+#  ┌─────────────────┬────────────────────────────────────────────────┐
+#  │ Secret name     │ Value                                          │
+#  ├─────────────────┼────────────────────────────────────────────────┤
+#  │ SSH_HOST        │ 31.42.125.213                                  │
+#  │ SSH_USER        │ root                                           │
+#  │ SSH_PASSWORD    │ <server password>                              │
+#  │ API_ENV         │ Full contents of apps/api/.env                 │
+#  │ WEB_ENV         │ Full contents of apps/web/.env                 │
+#  └─────────────────┴────────────────────────────────────────────────┘
+# ============================================================
+
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  #  Job 1 — Deploy API
+  # ─────────────────────────────────────────────────────────
+  deploy-api:
+    name: 🚀 Deploy API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH → Pull, build & restart API
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          API_ENV: ${{ secrets.API_ENV }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          envs: API_ENV
+          script: |
+            set -e
+            cd /root/akkukachasma_monorepo
+
+            echo "──────────────────────────────────────────"
+            echo "  [1/5] Pulling latest code from origin/main"
+            echo "──────────────────────────────────────────"
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "──────────────────────────────────────────"
+            echo "  [2/5] Writing API .env from secret"
+            echo "──────────────────────────────────────────"
+            printf '%s' "$API_ENV" > apps/api/.env
+
+            echo "──────────────────────────────────────────"
+            echo "  [3/5] Installing dependencies"
+            echo "──────────────────────────────────────────"
+            pnpm install --frozen-lockfile
+
+            echo "──────────────────────────────────────────"
+            echo "  [4/5] Generating Prisma client & building API"
+            echo "──────────────────────────────────────────"
+            cd apps/api
+            npx prisma generate
+            pnpm build
+
+            echo "──────────────────────────────────────────"
+            echo "  [5/5] Restarting PM2 → akkukachasma-api"
+            echo "──────────────────────────────────────────"
+            pm2 restart akkukachasma-api --update-env
+            pm2 save
+
+            echo "✅ API deployed successfully"
+
+  # ─────────────────────────────────────────────────────────
+  #  Job 2 — Deploy Web (runs after API is done)
+  # ─────────────────────────────────────────────────────────
+  deploy-web:
+    name: 🌐 Deploy Web
+    runs-on: ubuntu-latest
+    needs: deploy-api
+
+    steps:
+      - name: SSH → Build & restart Web
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          WEB_ENV: ${{ secrets.WEB_ENV }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          envs: WEB_ENV
+          script: |
+            set -e
+            cd /root/akkukachasma_monorepo
+
+            echo "──────────────────────────────────────────"
+            echo "  [1/3] Writing Web .env from secret"
+            echo "──────────────────────────────────────────"
+            printf '%s' "$WEB_ENV" > apps/web/.env
+
+            echo "──────────────────────────────────────────"
+            echo "  [2/3] Building Next.js Web"
+            echo "──────────────────────────────────────────"
+            cd apps/web
+            pnpm build
+
+            echo "──────────────────────────────────────────"
+            echo "  [3/3] Restarting PM2 → akkukachasma-web"
+            echo "──────────────────────────────────────────"
+            pm2 restart akkukachasma-web --update-env
+            pm2 save
+
+            echo "✅ Web deployed successfully"

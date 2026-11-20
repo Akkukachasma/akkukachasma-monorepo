@@ -4,7 +4,8 @@ model User {
   updated_at         DateTime?          @updatedAt
   email              String             @unique
   name               String
-  phone_number       String?
+  phone_number       String?   @unique
+  phone_verified     DateTime?
   email_verified     DateTime?
   deleted_at         DateTime?
   agree_t_and_c      Boolean
@@ -34,6 +35,15 @@ model User {
   activities          Activity[]
   notifications       Notification[]
   file_upload_sessions FileUploadSession[]
+}
+
+model PhoneOtp {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  phone_number String   @unique
+  otp_hash     String
+  attempts     Int      @default(0)
+  expires_at   DateTime
+  created_at   DateTime @default(now())
 }
 
 model Credential {

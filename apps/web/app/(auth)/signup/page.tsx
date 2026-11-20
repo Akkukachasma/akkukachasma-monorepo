@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import FeatureCard from "@/components/auth/FeatureCard";
 import { SignupForm } from "@/components/auth/SignupForm";
 import StatCard from "@/components/auth/StatCard";
@@ -70,6 +71,8 @@ export const metadata: Metadata = {
 };
 
 export default async function SignupPage() {
+  // Phone OTP flow handles both signup and login — redirect to login
+  redirect("/login");
 
   const isMobile = await isMobileDevice();
 

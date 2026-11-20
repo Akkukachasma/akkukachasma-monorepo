@@ -1,6 +1,7 @@
 "use client";
 import useFetch from "@/lib/hooks/use-fetch";
 import CartItem, { ICartItem } from "./CartItem";
+import DeleteCartItemModal from "./DeleteCartItemModal";
 import ENDPOINTS from "@/lib/endpoints";
 import { ICoupon } from "../coupon-manager/ListItem";
 import { ShoppingCart, AlertCircle } from "lucide-react";
@@ -89,6 +90,7 @@ const CartItems = () => {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
+      <DeleteCartItemModal />
       {data.cart_items.map((item) => {
         return <CartItem key={item.id} item={item} />;
       })}
