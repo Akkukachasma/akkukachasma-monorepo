@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+
   typescript: {
     // Allow production build to succeed even with type errors
     ignoreBuildErrors: true,

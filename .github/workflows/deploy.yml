@@ -4,8 +4,8 @@
 #
 #  Triggers on every push to `main` (or manual dispatch).
 #  Two sequential jobs:
-#    1. deploy-api  — builds NestJS API  → restarts PM2 akkukachasma-api
-#    2. deploy-web  — builds Next.js Web → restarts PM2 akkukachasma-web
+#    1. deploy-api  — builds NestJS API  → reloads PM2 akkukachasma-api (cluster ×4)
+#    2. deploy-web  — builds Next.js standalone → reloads PM2 akkukachasma-web (cluster ×2)
 #
 #  Required GitHub Secrets  (Settings → Secrets → Actions):
 #  ┌─────────────────┬────────────────────────────────────────────────┐
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH → Pull, build & restart API
+      - name: SSH → Pull, build & reload API
         uses: appleboy/ssh-action@v1.0.3
         env:
           API_ENV: ${{ secrets.API_ENV }}
@@ -44,6 +44,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           envs: API_ENV
+          command_timeout: 10m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
@@ -72,9 +73,10 @@ jobs:
             pnpm build
 
             echo "──────────────────────────────────────────"
-            echo "  [5/5] Restarting PM2 → akkukachasma-api"
+            echo "  [5/5] Zero-downtime reload → akkukachasma-api (cluster ×4)"
             echo "──────────────────────────────────────────"
-            pm2 restart akkukachasma-api --update-env
+            cd /root/akkukachasma_monorepo
+            pm2 reload ecosystem.config.js --only akkukachasma-api --update-env
             pm2 save
 
             echo "✅ API deployed successfully"
@@ -88,7 +90,7 @@ jobs:
     needs: deploy-api
 
     steps:
-      - name: SSH → Build & restart Web
+      - name: SSH → Build standalone & reload Web
         uses: appleboy/ssh-action@v1.0.3
         env:
           WEB_ENV: ${{ secrets.WEB_ENV }}
@@ -97,25 +99,33 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           envs: WEB_ENV
+          command_timeout: 15m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
 
             echo "──────────────────────────────────────────"
-            echo "  [1/3] Writing Web .env from secret"
+            echo "  [1/4] Writing Web .env from secret"
             echo "──────────────────────────────────────────"
             printf '%s' "$WEB_ENV" > apps/web/.env
 
             echo "──────────────────────────────────────────"
-            echo "  [2/3] Building Next.js Web"
+            echo "  [2/4] Building Next.js (standalone output)"
             echo "──────────────────────────────────────────"
             cd apps/web
             pnpm build
 
             echo "──────────────────────────────────────────"
-            echo "  [3/3] Restarting PM2 → akkukachasma-web"
+            echo "  [3/4] Copying static assets into standalone"
             echo "──────────────────────────────────────────"
-            pm2 restart akkukachasma-web --update-env
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+
+            echo "──────────────────────────────────────────"
+            echo "  [4/4] Zero-downtime reload → akkukachasma-web (cluster ×2)"
+            echo "──────────────────────────────────────────"
+            cd /root/akkukachasma_monorepo
+            pm2 reload ecosystem.config.js --only akkukachasma-web --update-env
             pm2 save
 
             echo "✅ Web deployed successfully"
