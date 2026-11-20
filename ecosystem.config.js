@@ -22,11 +22,12 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
     },
 
-      // ─── Next.js Web — 3 instances, standalone build ─────────────────────────
+      // ─── Next.js Web — 3 instances ─────────────────────────────────────────
     {
       name: 'akkukachasma-web',
       cwd: path.resolve(__dirname, 'apps/web'),
-      script: '.next/standalone/apps/web/server.js',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start -p 3000',
       instances: 3,
       exec_mode: 'cluster',
       instance_var: 'INSTANCE_ID',

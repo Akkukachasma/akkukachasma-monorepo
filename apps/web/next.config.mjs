@@ -1,14 +1,5 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  // Required for pnpm monorepo: trace deps from workspace root so standalone
-  // includes all packages (e.g. @swc/helpers) not just apps/web/node_modules
-  outputFileTracingRoot: path.join(__dirname, '../../'),
 
   typescript: {
     // Allow production build to succeed even with type errors

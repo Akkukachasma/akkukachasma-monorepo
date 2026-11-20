@@ -4,11 +4,6 @@
 #
 #  Strategy: Build on GitHub Actions → rsync to server → reload PM2
 #
-#  Why rsync?
-#  - Builds happen on GitHub's fast servers (not production)
-#  - Production server stays responsive during deploy
-#  - Deploy time on server: ~20s instead of 8-12 min
-#
 #  Required GitHub Secrets:
 #  ┌──────────────────┬─────────────────────────────────────────────┐
 #  │ SSH_HOST         │ 31.42.125.213                               │
@@ -28,7 +23,7 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────
-  #  Job 1 — Build API on GitHub Actions runner
+  #  Job 1 — Build API
   # ─────────────────────────────────────────────────────────────────
   build-api:
     name: 🔨 Build API
@@ -71,7 +66,7 @@ jobs:
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────────
-  #  Job 2 — Build Web on GitHub Actions runner
+  #  Job 2 — Build Web
   # ─────────────────────────────────────────────────────────────────
   build-web:
     name: 🔨 Build Web
@@ -100,40 +95,20 @@ jobs:
         env:
           WEB_ENV: ${{ secrets.WEB_ENV }}
 
-      - name: Build Next.js (standalone)
-        run: |
-          cd apps/web
-          pnpm build
+      - name: Build Next.js
+        run: cd apps/web && pnpm build
 
-          # Copy static assets into standalone (monorepo path)
-          mkdir -p .next/standalone/apps/web/.next
-          cp -r .next/static .next/standalone/apps/web/.next/static
-          cp -r public .next/standalone/apps/web/public 2>/dev/null || true
-
-          # Dereference pnpm symlinks so artifact upload preserves all files
-          mv .next/standalone .next/standalone-raw
-          cp -rL .next/standalone-raw .next/standalone
-          rm -rf .next/standalone-raw
-
-          # Verify standalone is complete
-          SIZE=$(du -sm .next/standalone | cut -f1)
-          echo "Standalone size: ${SIZE}MB"
-          if [ "$SIZE" -lt 40 ]; then
-            echo "❌ Standalone too small (${SIZE}MB) — missing dependencies!"
-            ls -R .next/standalone/ | head -40
-            exit 1
-          fi
-          echo "✅ Standalone build verified (${SIZE}MB)"
-
-      - name: Upload Web standalone
+      - name: Upload Web build
         uses: actions/upload-artifact@v4
         with:
-          name: web-standalone
-          path: apps/web/.next/standalone/
+          name: web-build
+          path: |
+            apps/web/.next/
+            !apps/web/.next/cache/
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────────
-  #  Job 3 — Deploy API (rsync dist → server, reload PM2)
+  #  Job 3 — Deploy API
   # ─────────────────────────────────────────────────────────────────
   deploy-api:
     name: 🚀 Deploy API
@@ -163,22 +138,20 @@ jobs:
         run: |
           SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
           SERVER="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
-          REMOTE_DIR="/root/akkukachasma_monorepo"
+          REMOTE="/root/akkukachasma_monorepo"
 
-          # Sync config files (ecosystem, lockfile, workspace config)
           rsync -avz -e "$SSH_CMD" \
             ecosystem.config.js \
             pnpm-lock.yaml \
             pnpm-workspace.yaml \
             package.json \
-            "$SERVER:$REMOTE_DIR/"
+            "$SERVER:$REMOTE/"
 
-          # Sync API dist
           rsync -avz --delete -e "$SSH_CMD" \
             api-dist/ \
-            "$SERVER:$REMOTE_DIR/apps/api/dist/"
+            "$SERVER:$REMOTE/apps/api/dist/"
 
-      - name: Write API .env & restart PM2
+      - name: Write .env, install deps & restart API
         uses: appleboy/ssh-action@v1.0.3
         env:
           API_ENV: ${{ secrets.API_ENV }}
@@ -187,6 +160,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: API_ENV
+          command_timeout: 10m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
@@ -202,7 +176,7 @@ jobs:
             echo "✅ API deployed"
 
   # ─────────────────────────────────────────────────────────────────
-  #  Job 4 — Deploy Web (rsync standalone → server, reload PM2)
+  #  Job 4 — Deploy Web
   # ─────────────────────────────────────────────────────────────────
   deploy-web:
     name: 🌐 Deploy Web
@@ -210,11 +184,11 @@ jobs:
     needs: [build-web, deploy-api]
 
     steps:
-      - name: Download Web standalone
+      - name: Download Web build
         uses: actions/download-artifact@v4
         with:
-          name: web-standalone
-          path: web-standalone/
+          name: web-build
+          path: web-build/
 
       - name: Setup SSH
         env:
@@ -225,14 +199,14 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: rsync Web standalone to server
+      - name: rsync Web build to server
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            web-standalone/ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/standalone/
+            web-build/apps/web/.next/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/
 
-      - name: Write Web .env & restart PM2
+      - name: Write .env & restart Web
         uses: appleboy/ssh-action@v1.0.3
         env:
           WEB_ENV: ${{ secrets.WEB_ENV }}
@@ -251,7 +225,6 @@ jobs:
             pm2 delete akkukachasma-web 2>/dev/null || true
             pm2 start ecosystem.config.js --only akkukachasma-web
 
-            # Verify web started successfully (wait for processes to stabilize)
             sleep 5
             ONLINE=$(pm2 jlist | node -e "
               const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
