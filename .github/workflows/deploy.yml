@@ -2,21 +2,21 @@
 #  Production Deploy — Akkukachasma Monorepo
 # ============================================================
 #
-#  Triggers on every push to `main` (or manual dispatch).
-#  Two sequential jobs:
-#    1. deploy-api  — builds NestJS API  → reloads PM2 akkukachasma-api (cluster ×4)
-#    2. deploy-web  — builds Next.js standalone → reloads PM2 akkukachasma-web (cluster ×2)
+#  Strategy: Build on GitHub Actions → rsync to server → reload PM2
 #
-#  Required GitHub Secrets  (Settings → Secrets → Actions):
-#  ┌─────────────────┬────────────────────────────────────────────────┐
-#  │ Secret name     │ Value                                          │
-#  ├─────────────────┼────────────────────────────────────────────────┤
-#  │ SSH_HOST        │ 31.42.125.213                                  │
-#  │ SSH_USER        │ root                                           │
-#  │ SSH_PASSWORD    │ <server password>                              │
-#  │ API_ENV         │ Full contents of apps/api/.env                 │
-#  │ WEB_ENV         │ Full contents of apps/web/.env                 │
-#  └─────────────────┴────────────────────────────────────────────────┘
+#  Why rsync?
+#  - Builds happen on GitHub's fast servers (not production)
+#  - Production server stays responsive during deploy
+#  - Deploy time on server: ~20s instead of 8-12 min
+#
+#  Required GitHub Secrets:
+#  ┌──────────────────┬─────────────────────────────────────────────┐
+#  │ SSH_HOST         │ 31.42.125.213                               │
+#  │ SSH_USER         │ root                                        │
+#  │ SSH_PRIVATE_KEY  │ contents of the ed25519 private key         │
+#  │ API_ENV          │ Full contents of apps/api/.env              │
+#  │ WEB_ENV          │ Full contents of apps/web/.env              │
+#  └──────────────────┴─────────────────────────────────────────────┘
 # ============================================================
 
 name: Deploy to Production
@@ -27,105 +27,190 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ─────────────────────────────────────────────────────────
-  #  Job 1 — Deploy API
-  # ─────────────────────────────────────────────────────────
-  deploy-api:
-    name: 🚀 Deploy API
+  # ─────────────────────────────────────────────────────────────────
+  #  Job 1 — Build API on GitHub Actions runner
+  # ─────────────────────────────────────────────────────────────────
+  build-api:
+    name: 🔨 Build API
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH → Pull, build & reload API
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write API .env
+        run: printf '%s' "$API_ENV" > apps/api/.env
+        env:
+          API_ENV: ${{ secrets.API_ENV }}
+
+      - name: Generate Prisma client & build API
+        run: |
+          cd apps/api
+          npx prisma generate
+          pnpm build
+
+      - name: Upload API dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: apps/api/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────
+  #  Job 2 — Build Web on GitHub Actions runner
+  # ─────────────────────────────────────────────────────────────────
+  build-web:
+    name: 🔨 Build Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write Web .env
+        run: printf '%s' "$WEB_ENV" > apps/web/.env
+        env:
+          WEB_ENV: ${{ secrets.WEB_ENV }}
+
+      - name: Build Next.js (standalone)
+        run: |
+          cd apps/web
+          pnpm build
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
+      - name: Upload Web standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-standalone
+          path: apps/web/.next/standalone/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────
+  #  Job 3 — Deploy API (rsync dist → server, reload PM2)
+  # ─────────────────────────────────────────────────────────────────
+  deploy-api:
+    name: 🚀 Deploy API
+    runs-on: ubuntu-latest
+    needs: build-api
+
+    steps:
+      - name: Download API dist
+        uses: actions/download-artifact@v4
+        with:
+          name: api-dist
+          path: api-dist/
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: rsync API dist to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            api-dist/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/api/dist/
+
+      - name: Write API .env & reload PM2
         uses: appleboy/ssh-action@v1.0.3
         env:
           API_ENV: ${{ secrets.API_ENV }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: API_ENV
-          command_timeout: 10m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
 
-            echo "──────────────────────────────────────────"
-            echo "  [1/5] Pulling latest code from origin/main"
-            echo "──────────────────────────────────────────"
-            git fetch origin
-            git reset --hard origin/main
-
-            echo "──────────────────────────────────────────"
-            echo "  [2/5] Writing API .env from secret"
-            echo "──────────────────────────────────────────"
             printf '%s' "$API_ENV" > apps/api/.env
 
-            echo "──────────────────────────────────────────"
-            echo "  [3/5] Installing dependencies"
-            echo "──────────────────────────────────────────"
-            pnpm install --frozen-lockfile
+            # Ensure prod node_modules are up to date (fast — cached by pnpm)
+            pnpm install --frozen-lockfile --prod
 
-            echo "──────────────────────────────────────────"
-            echo "  [4/5] Generating Prisma client & building API"
-            echo "──────────────────────────────────────────"
-            cd apps/api
-            npx prisma generate
-            pnpm build
-
-            echo "──────────────────────────────────────────"
-            echo "  [5/5] Zero-downtime reload → akkukachasma-api (cluster ×4)"
-            echo "──────────────────────────────────────────"
-            cd /root/akkukachasma_monorepo
+            # Zero-downtime reload — cluster ×4
             pm2 reload ecosystem.config.js --only akkukachasma-api --update-env
             pm2 save
+            echo "✅ API deployed"
 
-            echo "✅ API deployed successfully"
-
-  # ─────────────────────────────────────────────────────────
-  #  Job 2 — Deploy Web (runs after API is done)
-  # ─────────────────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────
+  #  Job 4 — Deploy Web (rsync standalone → server, reload PM2)
+  # ─────────────────────────────────────────────────────────────────
   deploy-web:
     name: 🌐 Deploy Web
     runs-on: ubuntu-latest
-    needs: deploy-api
+    needs: [build-web, deploy-api]
 
     steps:
-      - name: SSH → Build standalone & reload Web
+      - name: Download Web standalone
+        uses: actions/download-artifact@v4
+        with:
+          name: web-standalone
+          path: web-standalone/
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: rsync Web standalone to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            web-standalone/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/standalone/
+
+      - name: Write Web .env & reload PM2
         uses: appleboy/ssh-action@v1.0.3
         env:
           WEB_ENV: ${{ secrets.WEB_ENV }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: WEB_ENV
-          command_timeout: 15m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
 
-            echo "──────────────────────────────────────────"
-            echo "  [1/4] Writing Web .env from secret"
-            echo "──────────────────────────────────────────"
             printf '%s' "$WEB_ENV" > apps/web/.env
 
-            echo "──────────────────────────────────────────"
-            echo "  [2/4] Building Next.js (standalone output)"
-            echo "──────────────────────────────────────────"
-            cd apps/web
-            pnpm build
-
-            echo "──────────────────────────────────────────"
-            echo "  [3/4] Copying static assets into standalone"
-            echo "──────────────────────────────────────────"
-            cp -r .next/static .next/standalone/.next/static
-            cp -r public .next/standalone/public
-
-            echo "──────────────────────────────────────────"
-            echo "  [4/4] Zero-downtime reload → akkukachasma-web (cluster ×2)"
-            echo "──────────────────────────────────────────"
-            cd /root/akkukachasma_monorepo
+            # Zero-downtime reload — cluster ×2
             pm2 reload ecosystem.config.js --only akkukachasma-web --update-env
             pm2 save
-
-            echo "✅ Web deployed successfully"
+            echo "✅ Web deployed"
