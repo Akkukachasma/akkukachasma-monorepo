@@ -10,6 +10,7 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       max_memory_restart: '1G',
+      node_args: '--max-old-space-size=1536',
       env: {
         NODE_ENV: 'production',
         PORT: 8001,
@@ -27,6 +28,7 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       max_memory_restart: '1G',
+      node_args: '--max-old-space-size=1536',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
