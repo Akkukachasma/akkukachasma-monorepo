@@ -197,6 +197,7 @@ jobs:
       - name: rsync Web standalone to server
         run: |
           rsync -avz --delete \
+            --exclude='node_modules/.cache' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             web-standalone/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/standalone/
