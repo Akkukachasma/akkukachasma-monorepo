@@ -104,9 +104,26 @@ jobs:
         run: |
           cd apps/web
           pnpm build
+
+          # Copy static assets into standalone (monorepo path)
           mkdir -p .next/standalone/apps/web/.next
           cp -r .next/static .next/standalone/apps/web/.next/static
-          cp -r public .next/standalone/apps/web/public
+          cp -r public .next/standalone/apps/web/public 2>/dev/null || true
+
+          # Dereference pnpm symlinks so artifact upload preserves all files
+          mv .next/standalone .next/standalone-raw
+          cp -rL .next/standalone-raw .next/standalone
+          rm -rf .next/standalone-raw
+
+          # Verify standalone is complete
+          SIZE=$(du -sm .next/standalone | cut -f1)
+          echo "Standalone size: ${SIZE}MB"
+          if [ "$SIZE" -lt 40 ]; then
+            echo "❌ Standalone too small (${SIZE}MB) — missing dependencies!"
+            ls -R .next/standalone/ | head -40
+            exit 1
+          fi
+          echo "✅ Standalone build verified (${SIZE}MB)"
 
       - name: Upload Web standalone
         uses: actions/upload-artifact@v4
@@ -124,7 +141,7 @@ jobs:
     needs: build-api
 
     steps:
-      - name: Checkout (for ecosystem.config.js)
+      - name: Checkout (for config files)
         uses: actions/checkout@v4
 
       - name: Download API dist
@@ -142,21 +159,26 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: rsync ecosystem.config.js to server
+      - name: rsync config + API dist to server
         run: |
-          rsync -avz \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
+          SERVER="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          REMOTE_DIR="/root/akkukachasma_monorepo"
+
+          # Sync config files (ecosystem, lockfile, workspace config)
+          rsync -avz -e "$SSH_CMD" \
             ecosystem.config.js \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/ecosystem.config.js
+            pnpm-lock.yaml \
+            pnpm-workspace.yaml \
+            package.json \
+            "$SERVER:$REMOTE_DIR/"
 
-      - name: rsync API dist to server
-        run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+          # Sync API dist
+          rsync -avz --delete -e "$SSH_CMD" \
             api-dist/ \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/api/dist/
+            "$SERVER:$REMOTE_DIR/apps/api/dist/"
 
-      - name: Write API .env & reload PM2
+      - name: Write API .env & restart PM2
         uses: appleboy/ssh-action@v1.0.3
         env:
           API_ENV: ${{ secrets.API_ENV }}
@@ -171,11 +193,9 @@ jobs:
 
             printf '%s' "$API_ENV" > apps/api/.env
 
-            # Ensure node_modules are up to date (CI=true prevents interactive prompt)
             export CI=true
             pnpm install --frozen-lockfile
 
-            # Restart: delete + start to apply cluster mode / script changes
             pm2 delete akkukachasma-api 2>/dev/null || true
             pm2 start ecosystem.config.js --only akkukachasma-api
             pm2 save
@@ -208,12 +228,11 @@ jobs:
       - name: rsync Web standalone to server
         run: |
           rsync -avz --delete \
-            --exclude='node_modules/.cache' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             web-standalone/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/standalone/
 
-      - name: Write Web .env & reload PM2
+      - name: Write Web .env & restart PM2
         uses: appleboy/ssh-action@v1.0.3
         env:
           WEB_ENV: ${{ secrets.WEB_ENV }}
@@ -222,14 +241,27 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: WEB_ENV
+          command_timeout: 5m
           script: |
             set -e
             cd /root/akkukachasma_monorepo
 
             printf '%s' "$WEB_ENV" > apps/web/.env
 
-            # Restart: delete + start to apply cluster mode / script changes
             pm2 delete akkukachasma-web 2>/dev/null || true
             pm2 start ecosystem.config.js --only akkukachasma-web
+
+            # Verify web started successfully (wait for processes to stabilize)
+            sleep 5
+            ONLINE=$(pm2 jlist | node -e "
+              const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+              console.log(d.filter(p=>p.name==='akkukachasma-web'&&p.pm2_env.status==='online').length)
+            ")
+            if [ "$ONLINE" -eq 0 ]; then
+              echo "❌ Web failed to start! Logs:"
+              pm2 logs akkukachasma-web --lines 20 --nostream
+              exit 1
+            fi
+
             pm2 save
-            echo "✅ Web deployed"
+            echo "✅ Web deployed ($ONLINE instances online)"
