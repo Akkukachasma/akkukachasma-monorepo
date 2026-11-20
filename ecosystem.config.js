@@ -26,7 +26,7 @@ module.exports = {
     {
       name: 'akkukachasma-web',
       cwd: path.resolve(__dirname, 'apps/web'),
-      script: '.next/standalone/server.js',
+      script: '.next/standalone/apps/web/server.js',
       instances: 2,
       exec_mode: 'cluster',
       instance_var: 'INSTANCE_ID',

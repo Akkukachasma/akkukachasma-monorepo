@@ -104,9 +104,9 @@ jobs:
         run: |
           cd apps/web
           pnpm build
-          mkdir -p .next/standalone/.next
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
+          mkdir -p .next/standalone/apps/web/.next
+          cp -r .next/static .next/standalone/apps/web/.next/static
+          cp -r public .next/standalone/apps/web/public
 
       - name: Upload Web standalone
         uses: actions/upload-artifact@v4
@@ -165,8 +165,9 @@ jobs:
             export CI=true
             pnpm install --frozen-lockfile
 
-            # Zero-downtime reload — cluster ×4
-            pm2 reload ecosystem.config.js --only akkukachasma-api --update-env
+            # Restart: delete + start to apply cluster mode / script changes
+            pm2 delete akkukachasma-api 2>/dev/null || true
+            pm2 start ecosystem.config.js --only akkukachasma-api
             pm2 save
             echo "✅ API deployed"
 
@@ -217,7 +218,8 @@ jobs:
 
             printf '%s' "$WEB_ENV" > apps/web/.env
 
-            # Zero-downtime reload — cluster ×2
-            pm2 reload ecosystem.config.js --only akkukachasma-web --update-env
+            # Restart: delete + start to apply cluster mode / script changes
+            pm2 delete akkukachasma-web 2>/dev/null || true
+            pm2 start ecosystem.config.js --only akkukachasma-web
             pm2 save
             echo "✅ Web deployed"
