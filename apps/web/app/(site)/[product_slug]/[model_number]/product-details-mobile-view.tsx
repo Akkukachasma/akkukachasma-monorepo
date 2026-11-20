@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 "use client";
 
 import { useMemo } from "react";
@@ -129,7 +130,7 @@ export default function ProductDetailsMobileView({
                 <span className="relative flex items-center w-full mb-1">
                   <span className="block w-[80%] mx-auto h-[2px] bg-destructive" />
                 </span>
-                <Image src="/lens-only.png" alt="lens-only" width={80} height={80} />
+                <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={80} height={80} />
               </div>
               <div className="text-xs font-semibold text-foreground">Frame Width</div>
             </div>
@@ -138,7 +139,7 @@ export default function ProductDetailsMobileView({
               <div className="text-xs text-muted-foreground">{product?.lens_width} mm</div>
               <div className="relative grid place-content-center">
                 <span className="absolute top-1/2 -translate-y-1/2 left-1.5 w-[28px] block h-[2px] bg-destructive" />
-                <Image src="/lens-only.png" alt="lens-only" width={80} height={80} />
+                <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={80} height={80} />
               </div>
               <div className="text-xs font-semibold text-foreground">Lens Width</div>
             </div>
@@ -148,7 +149,7 @@ export default function ProductDetailsMobileView({
               <div className="text-xs text-muted-foreground">{product?.lens_height} mm</div>
               <div className="relative grid place-content-center">
                 <span className="absolute top-1/2 -translate-y-1/2 left-[18px] h-[28px] block w-[2px] bg-destructive" />
-                <Image src="/lens-only.png" alt="lens-only" width={80} height={80} />
+                <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={80} height={80} />
               </div>
               <div className="text-xs font-semibold text-foreground">Lens Height</div>
             </div>

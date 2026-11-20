@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Public folder — static assets served from S3 (not git)
+public/*
+!public/favicon/
+!public/favicon/**

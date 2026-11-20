@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
@@ -18,7 +19,7 @@ const WomenFashionBanner = () => {
       <CardContent>
         <div className="relative">
           <Image
-            src="/banner5.png"
+            src={S3_ASSETS.BANNER5}
             alt="GalleryImages"
             width={200}
             height={100}

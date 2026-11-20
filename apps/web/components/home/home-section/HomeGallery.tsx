@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import React from "react";
 import Image from "next/image";
 import GalleryGrid from "./GalleryGrid";
@@ -6,7 +7,7 @@ const HomeGallery: React.FC = () => {
   return (
     <div className="flex flex-col gap-6 py-6">
       {/* <Image
-        src="/images/banner1.png"
+        src={S3_ASSETS.img("banner1.png")}
         alt="GalleryImages"
         width={200}
         height={100}

@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import Image from "next/image";
 import { Invoice, InvoiceItem } from "../queries/useGetInvoice";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,7 @@ const InvoiceHeader: React.FC<InvoiceHeaderProps> = ({ invoiceNumber, invoice, a
                 {/* Middle Column - Company Details */}
                 <div className="h-full grid place-content-center col-span-6">
                     <Image
-                        src="/Logo.png"
+                        src={S3_ASSETS.LOGO}
                         alt="Akku Ka Chasma"
                         width={250}
                         height={180}

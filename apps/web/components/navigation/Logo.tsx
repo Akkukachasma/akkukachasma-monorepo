@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ const Logo: React.FC<LogoProps> = ({ className = "", imageClassName = "" }) => {
       )}
     >
       <Image
-        src="/Logo.png"
+        src={S3_ASSETS.LOGO}
         alt="Akku Ka Chasma"
         fill
         className={cn("object-contain object-left dark:invert", imageClassName)}

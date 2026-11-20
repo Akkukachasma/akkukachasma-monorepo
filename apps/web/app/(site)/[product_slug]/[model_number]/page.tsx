@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import type { IProduct } from "@/components/products/ListItem";
 import PersistedColorSwitcher from "@/components/products/PersistedColorSwitcher";
 import GalleryCarousel from "@/components/ui/swiper/GalleryCarousel";
@@ -248,7 +249,7 @@ const ProductDetailsPage = async ({
                     <span className="relative flex items-center w-full mb-1">
                       <span className="block w-[80%] mx-auto h-[2px] bg-destructive" />
                     </span>
-                    <Image src="/lens-only.png" alt="lens-only" width={100} height={100} />
+                    <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={100} height={100} />
                   </div>
                   <div className="text-xs font-semibold text-foreground">Frame Width</div>
                 </div>
@@ -257,7 +258,7 @@ const ProductDetailsPage = async ({
                   <div className="text-xs text-muted-foreground">{product?.lens_width} mm</div>
                   <div className="relative grid place-content-center">
                     <span className="absolute top-1/2 -translate-y-1/2 left-1.5 w-[35px] block h-[2px] bg-destructive" />
-                    <Image src="/lens-only.png" alt="lens-only" width={100} height={100} />
+                    <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={100} height={100} />
                   </div>
                   <div className="text-xs font-semibold text-foreground">Lens Width</div>
                 </div>
@@ -267,7 +268,7 @@ const ProductDetailsPage = async ({
                   <div className="text-xs text-muted-foreground">{product?.lens_height} mm</div>
                   <div className="relative grid place-content-center">
                     <span className="absolute top-1/2 -translate-y-1/2 left-[22px] h-[30px] block w-[2px] bg-destructive" />
-                    <Image src="/lens-only.png" alt="lens-only" width={100} height={100} />
+                    <Image src={S3_ASSETS.LENS_ONLY} alt="lens-only" width={100} height={100} />
                   </div>
                   <div className="text-xs font-semibold text-foreground">Lens Height</div>
                 </div>

@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 "use client";
 import Image from "next/image";
 import ReceiptDetail from "./ReceiptDetail";
@@ -61,7 +62,7 @@ const CheckoutSuccess = () => {
         {/* Header with success message */}
         <div className="text-center">
           <Image
-            src="/check.gif"
+            src={S3_ASSETS.CHECK_GIF}
             alt="Checkout successful gif"
             width={60}
             height={60}

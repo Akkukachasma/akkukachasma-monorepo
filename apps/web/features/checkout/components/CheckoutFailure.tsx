@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 "use client";
 import Image from "next/image";
 import ReceiptDetail from "./ReceiptDetail";
@@ -61,7 +62,7 @@ const CheckoutFailure = () => {
         {/* Header with failure message */}
         <div className="text-center">
           <Image
-            src="/failed.gif"
+            src={S3_ASSETS.FAILED_GIF}
             alt="Checkout failed gif"
             width={60}
             height={60}

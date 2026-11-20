@@ -1,10 +1,11 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 import React from "react";
 import Image from "next/image";
 
 const images = [
-  "/images/banner1.png",
-  "/images/banner1.png",
-  "/images/banner1.png",
+  S3_ASSETS.img("banner1.png"),
+  S3_ASSETS.img("banner1.png"),
+  S3_ASSETS.img("banner1.png"),
 ];
 
 const GalleryGrid: React.FC = () => {

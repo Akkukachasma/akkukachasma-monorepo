@@ -1,3 +1,4 @@
+import { S3_ASSETS } from "@/lib/s3-assets";
 /**
  * Central branding and timing configuration for the global route loader.
  * Adjust these values to customize motion without touching component logic.
@@ -17,7 +18,7 @@ export const ROUTE_LOADER_CONFIG = {
   logoPulseScale: 1.04,
 
   /** Logo asset (public path). */
-  logoSrc: "/Logo.png",
+  logoSrc: S3_ASSETS.LOGO,
   logoAlt: "Akku Ka Chasma",
 
   /** Subtle glow behind the logo. */
