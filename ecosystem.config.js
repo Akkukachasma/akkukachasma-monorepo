@@ -2,12 +2,12 @@ const path = require('path');
 
 module.exports = {
   apps: [
-    // ─── NestJS API — 4 instances across 8 CPUs ──────────────────────────────
+      // ─── NestJS API — 5 instances across 8 CPUs ──────────────────────────────
     {
       name: 'akkukachasma-api',
       cwd: path.resolve(__dirname, 'apps/api'),
       script: 'dist/src/main.js',
-      instances: 4,
+      instances: 5,
       exec_mode: 'cluster',
       instance_var: 'INSTANCE_ID',
       autorestart: true,
@@ -22,12 +22,12 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
     },
 
-    // ─── Next.js Web — 2 instances, standalone build ─────────────────────────
+      // ─── Next.js Web — 3 instances, standalone build ─────────────────────────
     {
       name: 'akkukachasma-web',
       cwd: path.resolve(__dirname, 'apps/web'),
       script: '.next/standalone/apps/web/server.js',
-      instances: 2,
+      instances: 3,
       exec_mode: 'cluster',
       instance_var: 'INSTANCE_ID',
       autorestart: true,
