@@ -1,5 +1,5 @@
-import { S3_ASSETS } from "@/lib/s3-assets";
 "use client";
+import { S3_ASSETS } from "@/lib/s3-assets";
 
 import { useMemo } from "react";
 import type { IProduct } from "@/components/products/ListItem";

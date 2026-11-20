@@ -1,5 +1,5 @@
-import { S3_ASSETS } from "@/lib/s3-assets";
 "use client";
+import { S3_ASSETS } from "@/lib/s3-assets";
 import Image from "next/image";
 import ReceiptDetail from "./ReceiptDetail";
 import { Button } from "@/components/ui/button";
