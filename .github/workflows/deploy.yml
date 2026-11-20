@@ -212,7 +212,9 @@ jobs:
 
       - name: rsync Web build to server
         run: |
+          # --exclude='/cache/' keeps the server's resized-image cache (.next/cache) across deploys
           rsync -avz --delete \
+            --exclude='/cache/' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             web-build/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/akkukachasma_monorepo/apps/web/.next/

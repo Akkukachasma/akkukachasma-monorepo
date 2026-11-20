@@ -17,6 +17,22 @@ import { IBanner } from "@/components/banners/ListItem";
 import { cookies } from "next/headers";
 import { TOKENS } from "@/lib/constants";
 import { HeroMediaRenderer } from "@/components/home/hero-media-renderer";
+import type { ISeparatedProduct } from "@/lib/types";
+import type { IColor } from "@/components/colors/ListItem";
+
+/**
+ * The API attaches `product_color_ids` (every product-color using that color, ~6 KB per color)
+ * to each color. Product cards never read it, so drop it before the data is serialized into the page.
+ */
+const slimProductColors = (items: ISeparatedProduct[]): ISeparatedProduct[] =>
+  items.map((item) => ({
+    ...item,
+    colors: item.colors?.map((color) => {
+      const slim = { ...color } as IColor & { product_color_ids?: unknown };
+      delete slim.product_color_ids;
+      return slim;
+    }),
+  }));
 
 export const metadata: Metadata = {
   title: "Akku Ka Chasma",
@@ -59,15 +75,15 @@ const HomePage = async () => {
       : [];
   const featuredProducts =
     featuredResult.status === "fulfilled" && Array.isArray(featuredResult.value)
-      ? featuredResult.value
+      ? slimProductColors(featuredResult.value)
       : [];
   const popularProducts =
     popularResult.status === "fulfilled" && Array.isArray(popularResult.value)
-      ? popularResult.value
+      ? slimProductColors(popularResult.value)
       : [];
   const latestProducts =
     latestResult.status === "fulfilled" && Array.isArray(latestResult.value)
-      ? latestResult.value
+      ? slimProductColors(latestResult.value)
       : [];
   const bannerList =
     bannersResult.status === "fulfilled" &&
